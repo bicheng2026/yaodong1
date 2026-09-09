@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>窑洞一号 · 文库问答</title>
+<style>
+:root{
+  --bg:#171310; --bg2:#211b16; --card:#261f19; --line:#3a2f26;
+  --ink:#efe6da; --dim:#a2937f; --red:#c0392b; --gold:#d8a44f; --ok:#7fb069;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg);color:var(--ink);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+/* ---------- 密码锁 ---------- */
+#lock{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#2a211a,#14100d);
+  display:flex;align-items:center;justify-content:center;z-index:99;padding:20px}
+#lock .box{width:100%;max-width:360px;text-align:center}
+#lock h1{font-size:22px;margin:0 0 6px;letter-spacing:3px;color:var(--gold)}
+#lock p{color:var(--dim);font-size:13px;margin:0 0 22px}
+#lock input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink);font-size:16px;text-align:center;letter-spacing:2px}
+#lock button{margin-top:12px;width:100%;padding:13px;border:0;border-radius:10px;
+  background:linear-gradient(180deg,var(--red),#96271b);color:#fff;font-size:16px;cursor:pointer}
+#lock .err{color:#e07a6a;font-size:13px;margin-top:12px;min-height:20px}
+/* ---------- 主界面 ---------- */
+#app{display:none;flex-direction:column;height:100%;max-width:900px;margin:0 auto}
+header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;
+  background:linear-gradient(180deg,#241d17,#1b1611)}
+header .t{font-size:16px;letter-spacing:2px;color:var(--gold);font-weight:600}
+header .s{font-size:12px;color:var(--dim)}
+header .sp{flex:1}
+.iconbtn{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:8px;
+  padding:6px 11px;font-size:13px;cursor:pointer}
+.iconbtn:hover{color:var(--ink);border-color:var(--gold)}
+#chat{flex:1;overflow-y:auto;padding:18px 16px 8px}
+.msg{margin-bottom:20px;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+.msg .who{font-size:12px;color:var(--dim);margin-bottom:6px;letter-spacing:1px}
+.msg.me .who{color:var(--gold)}
+.bubble{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+  white-space:pre-wrap;word-break:break-word}
+.msg.me .bubble{background:#332318;border-color:#4a3626}
+.bubble.src{background:transparent;border:0;padding:0 0 8px;font-size:12.5px;color:var(--dim)}
+.bubble.src b{color:var(--gold);font-weight:500}
+.bubble.src div{padding:4px 0;border-bottom:1px dashed var(--line)}
+#bar{padding:10px 16px 16px;border-top:1px solid var(--line);background:var(--bg2)}
+#bar .row{display:flex;gap:8px;align-items:flex-end}
+#q{flex:1;min-height:46px;max-height:130px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink);font:15px/1.6 inherit;resize:none;outline:none}
+#q:focus{border-color:var(--gold)}
+#send{padding:0 20px;height:46px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--red),#96271b);
+  color:#fff;font-size:15px;cursor:pointer;flex-shrink:0}
+#send:disabled{opacity:.45;cursor:default}
+.tip{font-size:11.5px;color:var(--dim);margin-top:8px;text-align:center}
+/* ---------- 设置 ---------- */
+#mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;
+  align-items:center;justify-content:center;padding:20px}
+#set{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;
+  width:100%;max-width:420px;max-height:86vh;overflow-y:auto}
+#set h3{margin:0 0 14px;font-size:16px;color:var(--gold)}
+#set label{display:block;font-size:12.5px;color:var(--dim);margin:12px 0 5px}
+#set input,#set select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink);font-size:14px}
+#set .btn{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--red);
+  color:#fff;font-size:15px;cursor:pointer}
+#set .close{margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
+  background:transparent;color:var(--dim);cursor:pointer}
+.hint{font-size:11.5px;color:var(--dim);margin-top:5px}
+#loading{text-align:center;color:var(--dim);padding:40px 0;font-size:13px}
+mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div class="box">
+    <h1>窑 洞 一 号</h1>
+    <p>马列毛著作原文知识库 · 请输入访问密码</p>
+    <input id="pw" type="password" placeholder="访问密码" autocomplete="current-password">
+    <button onclick="unlock()">进 入</button>
+    <div class="err" id="pwerr"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div>
+      <div class="t">窑洞一号</div>
+      <div class="s" id="stat">正在载入索引…</div>
+    </div>
+    <div class="sp"></div>
+    <button class="iconbtn" onclick="openSet()">设置</button>
+  </header>
+  <div id="chat"><div id="loading">正在载入文库索引…</div></div>
+  <div id="bar">
+    <div class="row">
+      <textarea id="q" rows="1" placeholder="问点什么？例如：毛泽东怎么论述实践与认识的关系？"></textarea>
+      <button id="send" onclick="ask()">发送</button>
+    </div>
+    <div class="tip">答案严格依据库中原文生成，附出处。Enter 发送 / Shift+Enter 换行</div>
+  </div>
+</div>
+
+<div id="mask">
+  <div id="set">
+    <h3>设置</h3>
+    <label>接口地址（兼容 OpenAI 的 /chat/completions）</label>
+    <input id="base" placeholder="https://api.deepseek.com/v1">
+    <label>API Key（仅保存在本机浏览器）</label>
+    <input id="key" type="password" placeholder="sk-...">
+    <label>模型名</label>
+    <input id="model" placeholder="deepseek-chat">
+    <div class="hint">推荐 DeepSeek（便宜好用）；也支持智谱、通义、OpenAI、本地 Ollama 等兼容接口。</div>
+    <label>修改访问密码（留空则保持原密码）</label>
+    <input id="npw" type="password" placeholder="新密码">
+    <button class="btn" onclick="saveSet()">保存</button>
+    <button class="close" onclick="closeSet()">关闭</button>
+    <div class="hint" style="margin-top:14px">提示：换设备/换浏览器后，密码恢复为初始密码，需重新设置。</div>
+  </div>
+</div>
+
+<script>
+/* ============ 配置 ============ */
+const DEFAULT_PW_HASH = "3c4049d6b7d4bf99e8e0dd71e2a07ffa608f0fbc57acaf304c6d3135993aa7f7"; // yanan2026
+const IDX = "data/index.json", LIBP = "lib/";
+let DOCS = [], cache = {}, busy = false;
+
+/* ============ 密码 ============ */
+async function sha256(s){
+  const b = new TextEncoder().encode(s);
+  const h = await crypto.subtle.digest("SHA-256", b);
+  return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+function pwHash(){ return localStorage.getItem("ydh_pw") || DEFAULT_PW_HASH; }
+async function unlock(){
+  const v = document.getElementById("pw").value.trim();
+  if(!v) return;
+  if(await sha256(v) === pwHash()){
+    sessionStorage.setItem("ydh_ok","1");
+    document.getElementById("lock").style.display="none";
+    document.getElementById("app").style.display="flex";
+    boot();
+  } else {
+    document.getElementById("pwerr").textContent = "密码不对，再试一次";
+  }
+}
+document.getElementById("pw").addEventListener("keydown", e=>{ if(e.key==="Enter") unlock(); });
+if(sessionStorage.getItem("ydh_ok")==="1"){
+  document.getElementById("lock").style.display="none";
+  document.getElementById("app").style.display="flex";
+}
+
+/* ============ 载入索引 ============ */
+async function boot(){
+  if(DOCS.length) return;
+  try{
+    const r = await fetch(IDX); const j = await r.json();
+    DOCS = j.docs;
+    const n = DOCS.reduce((a,d)=>a+d.s.length,0);
+    document.getElementById("stat").textContent = `${DOCS.length} 部文献 · ${n} 章节`;
+    document.getElementById("loading").innerHTML =
+      `<div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
+       <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>在下方输入你的问题，我会检索原文并依据原文作答。</div>
+       <div style="margin-top:14px;font-size:12px">试试：「实事求是出自哪里」「马克思论异化劳动」「列宁怎么谈国家」</div>`;
+  }catch(e){
+    document.getElementById("loading").textContent = "索引载入失败：" + e.message;
+  }
+}
+boot();
+
+/* ============ 检索 ============ */
+function tokenize(q){
+  const s = q.replace(/[，。？！、；：""''（）《》〈〉·\s,.?!:;"]/g," ");
+  const out = [];
+  for(const seg of s.split(" ").filter(x=>x)){
+    if(/[\u4e00-\u9fa5]/.test(seg)){
+      out.push(seg);
+      for(let i=0;i<seg.length-1;i++) out.push(seg.slice(i,i+2));
+    } else out.push(seg.toLowerCase());
+  }
+  return [...new Set(out)].filter(x=>x.length>=2);
+}
+function search(q, topk=14){
+  const tk = tokenize(q);
+  const res = [];
+  for(const d of DOCS){
+    let bs = 0;
+    for(const t of tk) if(d.t.includes(t)) bs += t.length*2;   // 书名命中加权
+    for(let i=0;i<d.s.length;i++){
+      const ti = d.s[i][0]; let sc = bs*0.4;
+      for(const t of tk){
+        if(ti.includes(t)) sc += t.length*3;
+      }
+      if(sc>0) res.push({d,i,sc,ti});
+    }
+  }
+  res.sort((a,b)=>b.sc-a.sc);
+  // 每个文献最多取 3 章，保证出处分散
+  const cnt = {}, out = [];
+  for(const r of res){
+    cnt[r.d.f] = (cnt[r.d.f]||0)+1;
+    if(cnt[r.d.f]<=3) out.push(r);
+    if(out.length>=topk) break;
+  }
+  return out;
+}
+async function full(d){
+  if(cache[d.f]) return cache[d.f];
+  const t = await (await fetch(LIBP + d.f)).text();
+  cache[d.f] = t; return t;
+}
+function sliceSec(txt, d, i, max=2600){
+  const a = d.s[i][1];
+  const b = (i+1<d.s.length) ? d.s[i+1][1] : d.n;
+  return txt.slice(a, Math.min(b, a+max)).replace(/^#{2,3}\s+.*$/m,"").trim();
+}
+
+/* ============ 提问 ============ */
+function addMsg(who, html, cls){
+  const c = document.getElementById("chat");
+  const m = document.createElement("div");
+  m.className = "msg " + (cls||"");
+  m.innerHTML = `<div class="who">${who}</div><div class="bubble">${html}</div>`;
+  c.appendChild(m); c.scrollTop = c.scrollHeight;
+  return m.querySelector(".bubble");
+}
+const esc = s => s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+async function ask(){
+  if(busy) return;
+  const el = document.getElementById("q");
+  const q = el.value.trim();
+  if(!q) return;
+  const cfg = {
+    base: (localStorage.getItem("ydh_base")||"https://api.deepseek.com/v1").replace(/\/$/,""),
+    key : localStorage.getItem("ydh_key")||"",
+    mdl : localStorage.getItem("ydh_model")||"deepseek-chat"
+  };
+  if(!cfg.key){ openSet(); alert("请先在设置里填写 API Key"); return; }
+  el.value = ""; el.style.height = "auto";
+  busy = true; document.getElementById("send").disabled = true;
+
+  addMsg("我", esc(q), "me");
+  const hits = search(q);
+  if(!hits.length){
+    addMsg("窑洞一号", "库里没有检索到与该问题相关的章节。换个说法或换个关键词试试？");
+    busy=false; document.getElementById("send").disabled=false; return;
+  }
+  // 取正文
+  const parts = [];
+  for(const h of hits){
+    try{
+      const t = await full(h.d);
+      const body = sliceSec(t, h.d, h.i);
+      if(body) parts.push({src:`${h.d.t} · ${h.ti}`, txt:body});
+    }catch(e){}
+  }
+  const ctx = parts.map((p,i)=>`[${i+1}] 出处：${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
+  const sys = `你是「窑洞一号」文库助手，库内为马克思、恩格斯、列宁、毛泽东著作的完整中文原文。
+严格依据所附原文回答用户问题，规则：
+1）只依据原文，不编造、不张冠李戴；2）引用处标注出处编号，如「〔1〕」；
+3）先给结论，再列原文依据，条理清晰；4）若原文不足以回答，明确说"库中原文不足以回答该问题"，不要硬答。
+语言：简体中文。`;
+
+  // 来源卡片
+  const srcHtml = `<b>命中 ${parts.length} 处原文：</b>` + parts.map((p,i)=>
+    `<div>〔${i+1}〕${esc(p.src)}</div>`).join("");
+  addMsg("窑洞一号", srcHtml, "src");
+
+  const b = addMsg("窑洞一号", "…");
+  let acc = "";
+  try{
+    const r = await fetch(cfg.base + "/chat/completions", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
+      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.3,
+        messages:[{role:"system",content:sys},{role:"user",content:`【原文】\n${ctx}\n\n【问题】\n${q}`}]})
+    });
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,200));
+    const rd = r.body.getReader(), dec = new TextDecoder();
+    while(true){
+      const {done,value} = await rd.read();
+      if(done) break;
+      for(const line of dec.decode(value).split("\n")){
+        if(!line.startsWith("data:")) continue;
+        const j = line.slice(5).trim();
+        if(j === "[DONE]") continue;
+        try{
+          const d = JSON.parse(j);
+          const t = d.choices?.[0]?.delta?.content || "";
+          if(t){ acc += t; b.textContent = acc; document.getElementById("chat").scrollTop = 1e9; }
+        }catch(e){}
+      }
+    }
+    if(!acc) b.textContent = "（模型未返回内容，请检查模型名或接口地址）";
+  }catch(e){
+    b.textContent = "调用失败：" + e.message + "\n\n请检查设置里的接口地址、API Key、模型名。";
+  }
+  busy=false; document.getElementById("send").disabled=false;
+}
+
+/* ============ 设置 ============ */
+function openSet(){
+  document.getElementById("base").value = localStorage.getItem("ydh_base")||"https://api.deepseek.com/v1";
+  document.getElementById("key").value = localStorage.getItem("ydh_key")||"";
+  document.getElementById("model").value = localStorage.getItem("ydh_model")||"deepseek-chat";
+  document.getElementById("npw").value = "";
+  document.getElementById("mask").style.display = "flex";
+}
+function closeSet(){ document.getElementById("mask").style.display = "none"; }
+async function saveSet(){
+  localStorage.setItem("ydh_base", document.getElementById("base").value.trim());
+  localStorage.setItem("ydh_key",  document.getElementById("key").value.trim());
+  localStorage.setItem("ydh_model",document.getElementById("model").value.trim());
+  const np = document.getElementById("npw").value.trim();
+  if(np){ localStorage.setItem("ydh_pw", await sha256(np)); alert("访问密码已更新，请牢记：" + np); }
+  closeSet();
+}
+document.getElementById("mask").addEventListener("click", e=>{ if(e.target.id==="mask") closeSet(); });
+
+/* ============ 输入 ============ */
+const ta = document.getElementById("q");
+ta.addEventListener("input", ()=>{ ta.style.height="auto"; ta.style.height=Math.min(ta.scrollHeight,130)+"px"; });
+ta.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); ask(); }
+});
+</script>
+</body>
+</html>
