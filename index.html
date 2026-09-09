@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="zh-CN" data-page-node-id="g2CEfmPjAHlGfrOjcECqaq">
+<head data-page-node-id="PfU8xMU4CBjgqzspcrcuJ9">
+<meta charset="utf-8" data-page-node-id="Eqpk8wq0ONqdmg6w5q6g9T">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" data-page-node-id="AZTgD1g2DyJsJk29wCQLrK">
 <title>窑洞一号 · 文库问答</title>
 <style>
 :root{
@@ -74,52 +74,52 @@ header .sp{flex:1}
 mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radius:2px}
 </style>
 </head>
-<body>
+<body data-page-node-id="RGuGRfY9Gr4K6L4uU17TJf">
 
-<div id="lock">
-  <div class="box">
-    <h1>窑 洞 一 号</h1>
-    <p>马列毛著作原文知识库 · 请输入访问密码</p>
-    <input id="pw" type="password" placeholder="访问密码" autocomplete="current-password">
-    <button onclick="unlock()">进 入</button>
-    <div class="err" id="pwerr"></div>
+<div id="lock" data-page-node-id="kgbbwukWfIwTQAcl84uXWF">
+  <div class="box" data-page-node-id="EnY2rEiRTeB2OxzkAmr6gs">
+    <h1 data-page-node-id="zHcnBIksNPsBXcUnk1MP7W">窑 洞 一 号</h1>
+    <p data-page-node-id="QgGvzeBoVZeEfzdi0DcUOb">马列毛著作原文知识库 · 请输入访问密码</p>
+    <input id="pw" type="password" placeholder="访问密码" autocomplete="current-password" data-page-node-id="FbOCPX5sAzWxnHKsP61fzh">
+    <button onclick="unlock()" data-page-node-id="qozRPBCcw2zLeJlaF41n4H">进 入</button>
+    <div class="err" id="pwerr" data-page-node-id="93hDVBlzEcMZADjOVAr9Sz"></div>
   </div>
 </div>
 
-<div id="app">
-  <header>
-    <div>
-      <div class="t">窑洞一号</div>
-      <div class="s" id="stat">正在载入索引…</div>
+<div id="app" data-page-node-id="eRTLznbm5DvDbU2POQ0flf">
+  <header data-page-node-id="jauEEwJJ0wb8d5njiQXkwj">
+    <div data-page-node-id="BaCIbqs3ijSvAEcQ8AR7Hw">
+      <div class="t" data-page-node-id="3ZZukW0wK0KdjVUsm0uqYO">窑洞一号</div>
+      <div class="s" id="stat" data-page-node-id="Y6F4Mk8jj0gLssCaTaQM63">正在载入索引…</div>
     </div>
-    <div class="sp"></div>
-    <button class="iconbtn" onclick="openSet()">设置</button>
+    <div class="sp" data-page-node-id="fXxpKFMq4BcDkGeoimrdYo"></div>
+    <button class="iconbtn" onclick="openSet()" data-page-node-id="fTapkwyw8yFZCBwaswxoy0">设置</button>
   </header>
-  <div id="chat"><div id="loading">正在载入文库索引…</div></div>
-  <div id="bar">
-    <div class="row">
-      <textarea id="q" rows="1" placeholder="问点什么？例如：毛泽东怎么论述实践与认识的关系？"></textarea>
-      <button id="send" onclick="ask()">发送</button>
+  <div id="chat" data-page-node-id="wMN31CE1E1lg7BQz5Rt4wA"><div id="loading" data-page-node-id="A1bu5cJ8CXN7UT3FwGTiSQ">正在载入文库索引…</div></div>
+  <div id="bar" data-page-node-id="XlQxXg21vo4RxwIA3sYFOs">
+    <div class="row" data-page-node-id="CpEg9z3DM3K6jeMZPgZ0rA">
+      <textarea id="q" rows="1" placeholder="问点什么？例如：最近班里活动没人配合，怎么办？"></textarea>
+      <button id="send" onclick="ask()" data-page-node-id="VgRdXlmey1kmJv9kv4LYbX">发送</button>
     </div>
-    <div class="tip">答案严格依据库中原文生成，附出处。Enter 发送 / Shift+Enter 换行</div>
+    <div class="tip" data-page-node-id="GQRc5qa4fT5kjdVM096tBU">生活、学习、工作上的困惑都能问，会结合经典著作给你参谋。Enter 发送 / Shift+Enter 换行</div>
   </div>
 </div>
 
-<div id="mask">
-  <div id="set">
-    <h3>设置</h3>
-    <label>接口地址（兼容 OpenAI 的 /chat/completions）</label>
-    <input id="base" placeholder="https://api.deepseek.com/v1">
-    <label>API Key（仅保存在本机浏览器）</label>
-    <input id="key" type="password" placeholder="sk-...">
-    <label>模型名</label>
-    <input id="model" placeholder="deepseek-chat">
-    <div class="hint">推荐 DeepSeek（便宜好用）；也支持智谱、通义、OpenAI、本地 Ollama 等兼容接口。</div>
-    <label>修改访问密码（留空则保持原密码）</label>
-    <input id="npw" type="password" placeholder="新密码">
-    <button class="btn" onclick="saveSet()">保存</button>
-    <button class="close" onclick="closeSet()">关闭</button>
-    <div class="hint" style="margin-top:14px">提示：换设备/换浏览器后，密码恢复为初始密码，需重新设置。</div>
+<div id="mask" data-page-node-id="STFyOq8BMlESCr3VtAny4t">
+  <div id="set" data-page-node-id="aEuNDOKqbUbPZzcMudIVOC">
+    <h3 data-page-node-id="7XsM6Xk4vIvdeLty3kReNd">设置</h3>
+    <label data-page-node-id="1GeTzDfvhZunPPCVg2ItPG">接口地址（兼容 OpenAI 的 /chat/completions）</label>
+    <input id="base" placeholder="https://api.deepseek.com/v1" data-page-node-id="gLXPpjKVwfpil1jNsDnXd4">
+    <label data-page-node-id="BJSDMaui6yYfy7mtKjHxuK">API Key（仅保存在本机浏览器）</label>
+    <input id="key" type="password" placeholder="sk-..." data-page-node-id="GPx2BCQ0wIjdAPH2TVXhaG">
+    <label data-page-node-id="XcbJFiWoLvZJpAHbRdbAXR">模型名</label>
+    <input id="model" placeholder="deepseek-chat" data-page-node-id="1kEuY5MFzv843MXu5ZRXzp">
+    <div class="hint" data-page-node-id="57LEAGaHsWeNN9LbIS4HLS">推荐 DeepSeek（便宜好用）；也支持智谱、通义、OpenAI、本地 Ollama 等兼容接口。</div>
+    <label data-page-node-id="EmNSUL7lST5cMORqZATLwu">修改访问密码（留空则保持原密码）</label>
+    <input id="npw" type="password" placeholder="新密码" data-page-node-id="CeHqKe2LP79CAl4LzAKFN6">
+    <button class="btn" onclick="saveSet()" data-page-node-id="Rudd1S57DG7vLnHtNA1B8q">保存</button>
+    <button class="close" onclick="closeSet()" data-page-node-id="QanoF4uymv8Yv0gH9sWBlQ">关闭</button>
+    <div class="hint" style="margin-top:14px" data-page-node-id="vOv1i7QsCLxT39C5SMGGlw">提示：换设备/换浏览器后，密码恢复为初始密码，需重新设置。</div>
   </div>
 </div>
 
@@ -164,8 +164,8 @@ async function boot(){
     document.getElementById("stat").textContent = `${DOCS.length} 部文献 · ${n} 章节`;
     document.getElementById("loading").innerHTML =
       `<div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
-       <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>在下方输入你的问题，我会检索原文并依据原文作答。</div>
-       <div style="margin-top:14px;font-size:12px">试试：「实事求是出自哪里」「马克思论异化劳动」「列宁怎么谈国家」</div>`;
+       <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>学习、班级工作、人际、心态上的困惑都可以问，我会调取经典著作的思想为你参谋。</div>
+       <div style="margin-top:14px;font-size:12px">试试：「和室友闹矛盾了怎么处理」「最近状态很差、提不起劲」「班里活动没人愿意配合」</div>`;
   }catch(e){
     document.getElementById("loading").textContent = "索引载入失败：" + e.message;
   }
@@ -184,6 +184,65 @@ function tokenize(q){
   }
   return [...new Set(out)].filter(x=>x.length>=2);
 }
+/* ============ 思想导航：抽象困惑 → 经典方法论篇目 ============ */
+const GUIDE = [
+  {name:"人际矛盾", kw:["关系","同学","朋友","矛盾","冲突","吵架","不合","孤立","合不来","得罪","误会","针对","不配合","处理不好","得罪人","闹翻","不和","室友","舍友","宿舍","班里人","看不惯","受气","闹僵","尴尬","社恐","内向"],
+   ch:["矛盾论","关于正确处理人民内部矛盾的问题","党委会的工作方法"]},
+  {name:"工作组织", kw:["活动","组织","班级","班委","工作","办活动","开展","搞不定","通知","没人","拖沓","任务","协调","冷场","策划","方案","负责","任务分配","班长","团支书","分工","动员","积极性"],
+   ch:["实践论","反对本本主义","党委会的工作方法","关于领导方法的若干问题"]},
+  {name:"状态心态", kw:["状态","心情","低落","焦虑","迷茫","没劲","动力","坚持","信心","颓废","烦","累","怀疑","内耗","摆烂","不想","压抑","烦躁","emo","提不起劲","不自信","没精神","失眠","颓","丧"],
+   ch:["星星之火，可以燎原","为人民服务","论持久战","愚公移山"]},
+  {name:"学习执行", kw:["拖延","计划","执行","学不进","效率","时间","自律","作业","复习","成绩","专注","笔记","背","考试","坚持不了","挂科","绩点","上课走神"],
+   ch:["实践论","人的正确思想是从哪里来的","论持久战"]},
+  {name:"错误批评", kw:["批评","犯错","失误","自责","后悔","被说","挨批","检讨","内疚","办砸","出丑","搞砸"],
+   ch:["为人民服务","关于正确处理人民内部矛盾的问题","反对自由主义"]},
+  {name:"成长进步", kw:["成长","进步","提升","能力","优秀","锻炼","积累","格局","眼高手低","能力不足","想太多做太少","平庸","差距"],
+   ch:["纪念白求恩","实践论","人的正确思想是从哪里来的"]},
+];
+/* 概念 → 方法论篇目（兜底：直接问"实事求是""群众路线"这类纯概念词时锚定） */
+const CONCEPT = [
+  {kw:["实事求是","一切从实际出发","实际出发"], ch:["改造我们的学习","反对本本主义","实践论"]},
+  {kw:["群众路线","脱离群众","联系群众","群众"], ch:["关于领导方法的若干问题","党委会的工作方法"]},
+  {kw:["调查研究","没有调查","调研","摸底"], ch:["反对本本主义","实践论"]},
+  {kw:["批评与自我批评","自我批评"], ch:["关于正确处理人民内部矛盾的问题","论联合政府"]},
+  {kw:["主要矛盾","次要矛盾","矛盾分析","内因","外因"], ch:["矛盾论"]},
+  {kw:["知行合一","光想不做","眼高手低"], ch:["实践论","人的正确思想是从哪里来的"]},
+  {kw:["战略藐视","战术重视","持久战","战略","战术"], ch:["论持久战","中国革命战争的战略问题"]},
+  {kw:["理想","信仰","信念","价值","意义"], ch:["为人民服务","纪念白求恩","愚公移山"]},
+  {kw:["挫折","失败","困难","低谷"], ch:["论持久战","星星之火，可以燎原","愚公移山"]},
+];
+function themeMatch(q){
+  let best = null, bestN = 0;
+  for(const g of GUIDE){
+    let n = 0;
+    for(const w of g.kw){ if(q.includes(w)) n++; }
+    if(n > bestN){ best = g; bestN = n; }
+  }
+  return bestN >= 1 ? {g:best, score:bestN} : null;
+}
+function conceptMatch(q){
+  let best = null, bestN = 0;
+  for(const c of CONCEPT){
+    let n = 0;
+    for(const w of c.kw){ if(q.includes(w)) n++; }
+    if(n > bestN){ best = c; bestN = n; }
+  }
+  return bestN >= 1 ? {c:best} : null;
+}
+function findChapter(title){
+  /* 按篇名找章节（思想导航锚点）：先精确/前缀匹配，再归一化（去标点）匹配，兼容库里标题带标点的情形 */
+  const tn = normT(title);
+  for(const d of DOCS){
+    for(let i=0;i<d.s.length;i++){
+      const ti = d.s[i][0].trim();
+      if(ti === title || ti.startsWith(title+"（") || ti.startsWith(title+"(") || ti.startsWith(title+"　") || normT(ti) === tn){
+        return {d, i, ti};
+      }
+    }
+  }
+  return null;
+}
+function normT(s){ return s.replace(/[\s，。、！？；：“”"'\u3000·—…（）()《》〈〉\-]/g,""); }
 function search(q, topk=10){
   const tk = tokenize(q);
   const secRes = [], docRes = [];
@@ -272,14 +331,29 @@ async function ask(){
   busy = true; document.getElementById("send").disabled = true;
 
   addMsg("我", esc(q), "me");
+  // ① 主题判定（思想导航；无主题命中时用概念映射兜底）
+  const theme = themeMatch(q);
+  const conc = theme ? null : conceptMatch(q);
+  // ② 常规检索 + 主题/概念锚点合并
   const hits = search(q);
-  if(!hits.length){
-    addMsg("窑洞一号", "库里没有检索到与该问题相关的章节。换个说法或换个关键词试试？");
-    busy=false; document.getElementById("send").disabled=false; return;
+  const cands = [];
+  const used = new Set();
+  const push = (d,i,ti) => { const k = d.f + "#" + (i<0 ? "W" : i); if(!used.has(k)){ used.add(k); cands.push({d,i,ti}); } };
+  if(theme){
+    for(const t of theme.g.ch){
+      const ch = findChapter(t);
+      if(ch) push(ch.d, ch.i, ch.ti);
+    }
+  } else if(conc){
+    for(const t of conc.c.ch){
+      const ch = findChapter(t);
+      if(ch) push(ch.d, ch.i, ch.ti);
+    }
   }
-  // 取正文
+  for(const h of hits) push(h.d, h.i, h.ti||h.d.t);
+  // ③ 取正文
   const parts = [];
-  for(const h of hits){
+  for(const h of cands.slice(0,8)){
     try{
       const t = await full(h.d);
       if(h.i>=0){
@@ -291,26 +365,31 @@ async function ask(){
       }
     }catch(e){}
   }
-  const ctx = parts.map((p,i)=>`[${i+1}] 出处：${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
-  const sys = `你是「窑洞一号」文库助手，库内为马克思、恩格斯、列宁、毛泽东著作的完整中文原文。
-严格依据所附原文回答用户问题，规则：
-1）只依据原文，不编造、不张冠李戴；2）引用处标注出处编号，如「〔1〕」；
-3）先给结论，再列原文依据，条理清晰；4）若原文不足以回答，明确说"库中原文不足以回答该问题"，不要硬答。
-语言：简体中文。`;
+  const ctx = parts.map((p,i)=>`〔${i+1}〕${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
+  const hasRef = parts.length > 0;
+  const sys = `你是「窑洞一号」——一位以马克思列宁主义、毛泽东思想武装头脑的参谋长与青年导师。向你提问的是一位大学生（常任班干部），在现实的学习、班级工作、人际关系、个人心态上遇到困惑，需要你真诚的分析、开导与具体办法。
+
+回答要求：
+1）先共情、理解他的真实处境，再用方法论分析，最后给可操作的动作建议；不空谈大道理，不说套话。
+2）自然运用这些思想武器：实事求是；调查研究（"没有调查，没有发言权"）；群众路线（从群众中来、到群众中去，密切联系群众）；矛盾分析法（矛盾普遍存在、抓主要矛盾、看主流与支流、矛盾可以转化）；实践第一（实践出真知，知行合一）；批评与自我批评（团结—批评—团结）；战略上藐视、战术上重视；具体问题具体分析。
+3）若下面【原文】给出了库中检索到的经典论述，请恰当引用以支撑你的分析，引用处标注〔编号〕，不要伪造出处；若没有【原文】或原文不足，凭你对经典著作的准确理解作答即可，切勿编造引文。
+4）给出的建议要具体到能直接去做的动作，贴合大学生活、班级事务、同学相处的实际；语言真诚平实，用简体中文，条理清晰。`;
 
   // 来源卡片
-  const srcHtml = `<b>命中 ${parts.length} 处原文：</b>` + parts.map((p,i)=>
-    `<div>〔${i+1}〕${esc(p.src)}</div>`).join("");
-  addMsg("窑洞一号", srcHtml, "src");
-
+  if(hasRef){
+    const srcHtml = `<b>本次为你调用的思想武器（${parts.length} 处）：</b>` + parts.map((p,i)=>
+      `<div>〔${i+1}〕${esc(p.src)}</div>`).join("");
+    addMsg("窑洞一号", srcHtml, "src");
+  }
   const b = addMsg("窑洞一号", "…");
   let acc = "";
   try{
     const r = await fetch(cfg.base + "/chat/completions", {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
-      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.3,
-        messages:[{role:"system",content:sys},{role:"user",content:`【原文】\n${ctx}\n\n【问题】\n${q}`}]})
+      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.5,
+        messages:[{role:"system",content:sys},{role:"user",content:
+          (ctx ? `【原文】\n${ctx}\n\n` : "") + `【我的困惑】\n${q}`}]})
     });
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,200));
     const rd = r.body.getReader(), dec = new TextDecoder();
