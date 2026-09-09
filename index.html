@@ -128,6 +128,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 const DEFAULT_PW_HASH = "3c4049d6b7d4bf99e8e0dd71e2a07ffa608f0fbc57acaf304c6d3135993aa7f7"; // yanan2026
 const IDX = "data/index.json", LIBP = "lib/";
 let DOCS = [], cache = {}, busy = false;
+const VERSION = "2026.09.10";
 
 /* ============ 密码 ============ */
 async function sha256(s){
@@ -165,11 +166,13 @@ async function boot(){
     document.getElementById("loading").innerHTML =
       `<div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
        <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>学习、班级工作、人际、心态上的困惑都可以问，我会调取经典著作的思想为你参谋。</div>
-       <div style="margin-top:14px;font-size:12px">试试：「和室友闹矛盾了怎么处理」「最近状态很差、提不起劲」「班里活动没人愿意配合」</div>`;
+       <div style="margin-top:14px;font-size:12px">试试：「和室友闹矛盾了怎么处理」「最近状态很差、提不起劲」「班里活动没人愿意配合」</div>
+       <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION}</div>`;
   }catch(e){
     document.getElementById("loading").textContent = "索引载入失败：" + e.message;
   }
 }
+checkStatus();
 boot();
 
 /* ============ 检索 ============ */
@@ -423,6 +426,12 @@ function openSet(){
   document.getElementById("mask").style.display = "flex";
 }
 function closeSet(){ document.getElementById("mask").style.display = "none"; }
+async function clearLocal(){
+  if(!confirm("确定清除本机所有数据（密码、API Key、设置、会话）？\n此操作只影响你当前这台设备。")) return;
+  localStorage.clear();
+  sessionStorage.clear();
+  location.reload();
+}
 async function saveSet(){
   localStorage.setItem("ydh_base", document.getElementById("base").value.trim());
   localStorage.setItem("ydh_key",  document.getElementById("key").value.trim());
