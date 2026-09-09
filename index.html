@@ -184,27 +184,54 @@ function tokenize(q){
   }
   return [...new Set(out)].filter(x=>x.length>=2);
 }
-function search(q, topk=14){
+function search(q, topk=10){
   const tk = tokenize(q);
-  const res = [];
+  const secRes = [], docRes = [];
   for(const d of DOCS){
-    let bs = 0;
-    for(const t of tk) if(d.t.includes(t)) bs += t.length*2;   // 书名命中加权
+    let dsc = 0;
+    for(const t of tk){
+      if(d.t && d.t.includes(t)) dsc += t.length*3;
+      if(d.i && d.i.includes(t)) dsc += t.length*1.5;   // 卷首简介命中
+    }
+    let bestSc = 0, bestI = -1;
     for(let i=0;i<d.s.length;i++){
-      const ti = d.s[i][0]; let sc = bs*0.4;
-      for(const t of tk){
-        if(ti.includes(t)) sc += t.length*3;
+      const ti = d.s[i][0]; let sc = 0;
+      for(const t of tk){ if(ti.includes(t)) sc += t.length*3; }
+      if(sc>bestSc){ bestSc=sc; bestI=i; }
+    }
+    const total = dsc*0.7 + bestSc;
+    if(total>2){
+      if(bestI>=0 && bestSc>0){
+        secRes.push({d,i:bestI,sc:total,ti:d.s[bestI][0]});
+      } else if(dsc>2){
+        docRes.push({d,i:-1,sc:dsc*0.7,ti:"（本卷正文相关，需卷内定位）"});
       }
-      if(sc>0) res.push({d,i,sc,ti});
     }
   }
-  res.sort((a,b)=>b.sc-a.sc);
-  // 每个文献最多取 3 章，保证出处分散
-  const cnt = {}, out = [];
-  for(const r of res){
-    cnt[r.d.f] = (cnt[r.d.f]||0)+1;
-    if(cnt[r.d.f]<=3) out.push(r);
+  secRes.sort((a,b)=>b.sc-a.sc);
+  docRes.sort((a,b)=>b.sc-a.sc);
+  const out = secRes.slice(0,8);
+  for(const r of docRes){
+    if(out.some(o=>o.d.f===r.d.f)) continue;
+    out.push(r);
     if(out.length>=topk) break;
+  }
+  return out;
+}
+function findRelated(txt, q, maxOut=3){
+  /* 整卷命中：按段落定位含关键词的正文，取相关段前后文 */
+  const tk = tokenize(q).sort((a,b)=>b.length-a.length);
+  const paras = txt.split(/\n{2,}/).map(p=>p.replace(/^#{1,4}\s*/,"").trim()).filter(p=>p.length>40);
+  const scored = [];
+  for(const p of paras){
+    let s = 0;
+    for(const t of tk){ if(p.includes(t)) s += t.length*2; }
+    if(s>0) scored.push({p,s});
+  }
+  scored.sort((a,b)=>b.s-a.s);
+  const out = [];
+  for(const r of scored.slice(0,maxOut)){
+    out.push(r.p.slice(0,1600));
   }
   return out;
 }
@@ -255,8 +282,13 @@ async function ask(){
   for(const h of hits){
     try{
       const t = await full(h.d);
-      const body = sliceSec(t, h.d, h.i);
-      if(body) parts.push({src:`${h.d.t} · ${h.ti}`, txt:body});
+      if(h.i>=0){
+        const body = sliceSec(t, h.d, h.i);
+        if(body) parts.push({src:`${h.d.t} · ${h.ti}`, txt:body});
+      } else {
+        const paras = findRelated(t, q);
+        paras.forEach((p,k)=>{ parts.push({src:`${h.d.t}（卷内定位${k+1}）`, txt:p}); });
+      }
     }catch(e){}
   }
   const ctx = parts.map((p,i)=>`[${i+1}] 出处：${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
