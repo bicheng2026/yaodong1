@@ -72,9 +72,25 @@ header .sp{flex:1}
 .hint{font-size:11.5px;color:var(--dim);margin-top:5px}
 #loading{text-align:center;color:var(--dim);padding:40px 0;font-size:13px}
 mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radius:2px}
+/* ---------- 停用遮罩（站长 deploy --down 触发）---------- */
+#down{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#2a211a,#14100d);
+  display:none;align-items:center;justify-content:center;z-index:999;padding:24px;text-align:center}
+#down .box{max-width:380px}
+#down h1{font-size:22px;letter-spacing:3px;color:var(--gold);margin:0 0 12px}
+#down p{color:var(--dim);font-size:14px;line-height:1.9}
+#down .by{font-size:12px;margin-top:18px;opacity:.55}
 </style>
 </head>
 <body data-page-node-id="RGuGRfY9Gr4K6L4uU17TJf">
+
+
+<div id="down">
+  <div class="box">
+    <h1>窑 洞 一 号</h1>
+    <p id="downmsg">本站维护中，暂时停用。</p>
+    <p class="by">本工具由主理人冯新栋出品</p>
+  </div>
+</div>
 
 <div id="lock" data-page-node-id="kgbbwukWfIwTQAcl84uXWF">
   <div class="box" data-page-node-id="EnY2rEiRTeB2OxzkAmr6gs">
@@ -120,6 +136,15 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     <button class="btn" onclick="saveSet()" data-page-node-id="Rudd1S57DG7vLnHtNA1B8q">保存</button>
     <button class="close" onclick="closeSet()" data-page-node-id="QanoF4uymv8Yv0gH9sWBlQ">关闭</button>
     <div class="hint" style="margin-top:14px" data-page-node-id="vOv1i7QsCLxT39C5SMGGlw">提示：换设备/换浏览器后，密码恢复为初始密码，需重新设置。</div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <button class="btn" onclick="clearLocal()" style="background:var(--line)">清除本机数据（退出并清空配置）</button>
+    <div class="hint" style="margin-top:6px">仅清除你当前这台设备的数据（密码、API Key、会话），不影响他人。清除后需重新输入密码与 Key。</div>
+    <div style="margin-top:16px;font-size:11.5px;color:var(--dim);line-height:1.9">
+      <b style="color:var(--gold)">关于窑洞一号</b><br>
+      主理人：冯新栋 · 出品<br>
+      文库：马列毛著作原文（公有领域 / 官方出版）<br>
+      本页面工具著作权归主理人所有，转载请保留署名。
+    </div>
   </div>
 </div>
 
@@ -153,6 +178,23 @@ document.getElementById("pw").addEventListener("keydown", e=>{ if(e.key==="Enter
 if(sessionStorage.getItem("ydh_ok")==="1"){
   document.getElementById("lock").style.display="none";
   document.getElementById("app").style.display="flex";
+}
+
+/* ============ 全局停用开关（站长 deploy --down / --up 触发）============ */
+async function checkStatus(){
+  try{
+    const r = await fetch("data/status.json", {cache:"no-store"});
+    const j = await r.json();
+    if(j && j.disabled){
+      sessionStorage.removeItem("ydh_ok");
+      document.getElementById("lock").style.display = "none";
+      document.getElementById("app").style.display = "none";
+      if(j.message) document.getElementById("downmsg").textContent = j.message;
+      document.getElementById("down").style.display = "flex";
+      return true;
+    }
+  }catch(e){ /* 取不到状态则正常放行，不误伤 */ }
+  return false;
 }
 
 /* ============ 载入索引 ============ */
