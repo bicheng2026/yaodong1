@@ -433,7 +433,7 @@ async function ask(){
     const r = await fetch(cfg.base + "/chat/completions", {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
-      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.5,
+      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.3,
         messages:[{role:"system",content:sys},{role:"user",content:
           (ctx ? `【原文】\n${ctx}\n\n` : "") + `【我的困惑】\n${q}`}]})
     });
