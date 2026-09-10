@@ -42,15 +42,17 @@ header .sp{flex:1}
 .msg .who{font-size:12px;color:var(--dim);margin-bottom:6px;letter-spacing:1px}
 .msg.me .who{color:var(--gold)}
 .bubble{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
-  white-space:pre-wrap;word-break:break-word}
+  white-space:pre-wrap;word-break:break-word;font-size:var(--a-fs,15px);color:var(--a-color,var(--ink))}
 .msg.me .bubble{background:#332318;border-color:#4a3626}
 .bubble.src{background:transparent;border:0;padding:0 0 8px;font-size:12.5px;color:var(--dim)}
 .bubble.src b{color:var(--gold);font-weight:500}
 .bubble.src div{padding:4px 0;border-bottom:1px dashed var(--line)}
+  .msg.think .bubble{background:transparent;border:1px dashed var(--line);font-size:12px;color:var(--dim);padding:10px 14px}
+  .msg.think .who{cursor:pointer;user-select:none}
 #bar{padding:10px 16px 16px;border-top:1px solid var(--line);background:var(--bg2)}
 #bar .row{display:flex;gap:8px;align-items:flex-end}
 #q{flex:1;min-height:46px;max-height:130px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
-  background:var(--bg);color:var(--ink);font:15px/1.6 inherit;resize:none;outline:none}
+  background:var(--bg);color:var(--q-color,var(--ink));font-size:var(--q-fs,15px);line-height:1.6;resize:none;outline:none}
 #q:focus{border-color:var(--gold)}
 #send{padding:0 20px;height:46px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--red),#96271b);
   color:#fff;font-size:15px;cursor:pointer;flex-shrink:0}
@@ -69,6 +71,8 @@ header .sp{flex:1}
   color:#fff;font-size:15px;cursor:pointer}
 #set .close{margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
   background:transparent;color:var(--dim);cursor:pointer}
+  .chip{font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;color:var(--dim);cursor:pointer}
+  .chip:hover{border-color:var(--gold);color:var(--ink)}
 .hint{font-size:11.5px;color:var(--dim);margin-top:5px}
 #loading{text-align:center;color:var(--dim);padding:40px 0;font-size:13px}
 mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radius:2px}
@@ -107,6 +111,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     <div data-page-node-id="BaCIbqs3ijSvAEcQ8AR7Hw">
       <div class="t" data-page-node-id="3ZZukW0wK0KdjVUsm0uqYO">窑洞一号</div>
       <div class="s" id="stat" data-page-node-id="Y6F4Mk8jj0gLssCaTaQM63">正在载入索引…</div>
+    <div class="s" id="curmodel" style="font-size:11px">中继：—</div>
     </div>
     <div class="sp" data-page-node-id="fXxpKFMq4BcDkGeoimrdYo"></div>
     <button class="iconbtn" onclick="openSet()" data-page-node-id="fTapkwyw8yFZCBwaswxoy0">设置</button>
@@ -130,6 +135,13 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     <input id="key" type="password" placeholder="sk-..." data-page-node-id="GPx2BCQ0wIjdAPH2TVXhaG">
     <label data-page-node-id="XcbJFiWoLvZJpAHbRdbAXR">模型名</label>
     <input id="model" placeholder="deepseek-chat" data-page-node-id="1kEuY5MFzv843MXu5ZRXzp">
+    <div id="modelchips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+      <span class="chip" data-m="deepseek-chat">deepseek-chat</span>
+      <span class="chip" data-m="deepseek-reasoner">deepseek-reasoner</span>
+      <span class="chip" data-m="glm-4-flash">glm-4-flash</span>
+      <span class="chip" data-m="qwen-plus">qwen-plus</span>
+    </div>
+    <div class="hint">含 reasoner 的模型才有「深度思考」；自定义模型名直接改上面输入框。</div>
     <div class="hint" data-page-node-id="57LEAGaHsWeNN9LbIS4HLS">推荐 DeepSeek（便宜好用）；也支持智谱、通义、OpenAI、本地 Ollama 等兼容接口。</div>
     <label data-page-node-id="EmNSUL7lST5cMORqZATLwu">修改访问密码（留空则保持原密码）</label>
     <input id="npw" type="password" placeholder="新密码" data-page-node-id="CeHqKe2LP79CAl4LzAKFN6">
@@ -137,6 +149,15 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     <button class="close" onclick="closeSet()" data-page-node-id="QanoF4uymv8Yv0gH9sWBlQ">关闭</button>
     <div class="hint" style="margin-top:14px" data-page-node-id="vOv1i7QsCLxT39C5SMGGlw">提示：换设备/换浏览器后，密码恢复为初始密码，需重新设置。</div>
     <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <div style="font-size:13px;color:var(--gold);margin:4px 0 0">外观调节（输入框 / 回答 分开）</div>
+    <label>输入框字体大小</label>
+    <input id="qfs" type="range" min="12" max="24" value="15">
+    <label>输入框文字颜色</label>
+    <input id="qcolor" type="color" value="#efe6da">
+    <label>回答字体大小</label>
+    <input id="afs" type="range" min="12" max="26" value="15">
+    <label>回答文字颜色</label>
+    <input id="acolor" type="color" value="#efe6da">
     <button class="btn" onclick="clearLocal()" style="background:var(--line)">清除本机数据（退出并清空配置）</button>
     <div class="hint" style="margin-top:6px">仅清除你当前这台设备的数据（密码、API Key、会话），不影响他人。清除后需重新输入密码与 Key。</div>
     <div style="margin-top:16px;font-size:11.5px;color:var(--dim);line-height:1.9">
@@ -216,6 +237,8 @@ async function boot(){
 }
 checkStatus();
 boot();
+applyFont();
+applyModel();
 
 /* ============ 检索 ============ */
 function tokenize(q){
@@ -420,7 +443,8 @@ async function ask(){
 2）自然运用这些思想武器：实事求是；调查研究（"没有调查，没有发言权"）；群众路线（从群众中来、到群众中去，密切联系群众）；矛盾分析法（矛盾普遍存在、抓主要矛盾、看主流与支流、矛盾可以转化）；实践第一（实践出真知，知行合一）；批评与自我批评（团结—批评—团结）；战略上藐视、战术上重视；具体问题具体分析。
 3）若下面【原文】给出了库中检索到的经典论述，请恰当引用以支撑你的分析，引用处标注〔编号〕，不要伪造出处；若没有【原文】或原文不足，凭你对经典著作的准确理解作答即可，切勿编造引文。
 4）给出的建议要具体到能直接去做的动作，贴合大学生活、班级事务、同学相处的实际；语言真诚平实，用简体中文，条理清晰。
-  5）回复用纯中文自然叙述，不要使用 ✳、◆、▍ 等装饰符号，也不要用 Markdown 标记（如 **、#）；需要分点时用（一）（二）或 1. 2. 编号，保持干净易读。`;
+  5）回复用纯中文自然叙述，不要使用 ✳、◆、▍ 等装饰符号，也不要用 Markdown 标记（如 **、#）；需要分点时用（一）（二）或 1. 2. 编号，保持干净易读。
+  6）像真人学长/朋友一样自然聊天，不要机械套用分析框架，不要每段硬塞方法论术语；有温度、口语化，顺着用户的语气走，避免千篇一律的套路感。讨论经典著作时自然引用，不堆砌术语标签。`;
 
   // 来源卡片
   if(hasRef){
@@ -428,13 +452,20 @@ async function ask(){
       `<div>〔${i+1}〕${esc(p.src)}</div>`).join("");
     addMsg("窑洞一号", srcHtml, "src");
   }
+  // 深度思考块（兼容支持 reasoning_content 的模型如 deepseek-reasoner；不支持则不显示）
+  const tb = addMsg("💭 深度思考", "思考中…", "think");
+  const twrap = tb.parentElement;
+  twrap.querySelector(".who").onclick = ()=>{
+    const bub = twrap.querySelector(".bubble");
+    bub.style.display = bub.style.display==="none" ? "block" : "none";
+  };
   const b = addMsg("窑洞一号", "…");
-  let acc = "";
+  let acc = "", racc = "", hasThink = false;
   try{
     const r = await fetch(cfg.base + "/chat/completions", {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
-      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.3,
+      body: JSON.stringify({model:cfg.mdl, stream:true, temperature:0.7,
         messages:[{role:"system",content:sys},{role:"user",content:
           (ctx ? `【原文】\n${ctx}\n\n` : "") + `【我的困惑】\n${q}`}]})
     });
@@ -449,16 +480,33 @@ async function ask(){
         if(j === "[DONE]") continue;
         try{
           const d = JSON.parse(j);
+          const rct = d.choices?.[0]?.delta?.reasoning_content || "";
+          if(rct){ hasThink = true; racc += rct; tb.textContent = racc.replace(/[✳◆▍#]+/g,""); document.getElementById("chat").scrollTop = 1e9; }
           const t = d.choices?.[0]?.delta?.content || "";
           if(t){ acc += t; acc = acc.replace(/[✳◆▍#]+/g,""); b.textContent = acc; document.getElementById("chat").scrollTop = 1e9; }
         }catch(e){}
       }
     }
+    if(hasThink){ twrap.querySelector(".who").textContent = "💭 深度思考（已完成，点击折叠）"; }
+    else { twrap.remove(); }
     if(!acc) b.textContent = "（模型未返回内容，请检查模型名或接口地址）";
   }catch(e){
     b.textContent = "调用失败：" + e.message + "\n\n请检查设置里的接口地址、API Key、模型名。";
   }
   busy=false; document.getElementById("send").disabled=false;
+}
+
+function applyFont(){
+  const r = document.documentElement.style;
+  r.setProperty("--q-fs", (localStorage.getItem("ydh_qfs")||"15")+"px");
+  r.setProperty("--q-color", localStorage.getItem("ydh_qcolor")||"#efe6da");
+  r.setProperty("--a-fs", (localStorage.getItem("ydh_afs")||"15")+"px");
+  r.setProperty("--a-color", localStorage.getItem("ydh_acolor")||"#efe6da");
+}
+function applyModel(){
+  const m = localStorage.getItem("ydh_model")||"deepseek-chat";
+  const el = document.getElementById("curmodel");
+  if(el) el.textContent = "中继：" + m + (m.includes("reasoner") ? "（含深度思考）" : "");
 }
 
 /* ============ 设置 ============ */
@@ -467,6 +515,10 @@ function openSet(){
   document.getElementById("key").value = localStorage.getItem("ydh_key")||"";
   document.getElementById("model").value = localStorage.getItem("ydh_model")||"deepseek-chat";
   document.getElementById("npw").value = "";
+  document.getElementById("qfs").value = localStorage.getItem("ydh_qfs")||"15";
+  document.getElementById("qcolor").value = localStorage.getItem("ydh_qcolor")||"#efe6da";
+  document.getElementById("afs").value = localStorage.getItem("ydh_afs")||"15";
+  document.getElementById("acolor").value = localStorage.getItem("ydh_acolor")||"#efe6da";
   document.getElementById("mask").style.display = "flex";
 }
 function closeSet(){ document.getElementById("mask").style.display = "none"; }
@@ -480,6 +532,11 @@ async function saveSet(){
   localStorage.setItem("ydh_base", document.getElementById("base").value.trim());
   localStorage.setItem("ydh_key",  document.getElementById("key").value.trim());
   localStorage.setItem("ydh_model",document.getElementById("model").value.trim());
+  localStorage.setItem("ydh_qfs", document.getElementById("qfs").value);
+  localStorage.setItem("ydh_qcolor", document.getElementById("qcolor").value);
+  localStorage.setItem("ydh_afs", document.getElementById("afs").value);
+  localStorage.setItem("ydh_acolor", document.getElementById("acolor").value);
+  applyFont(); applyModel();
   const np = document.getElementById("npw").value.trim();
   if(np){ localStorage.setItem("ydh_pw", await sha256(np)); alert("访问密码已更新，请牢记：" + np); }
   closeSet();
@@ -491,6 +548,13 @@ const ta = document.getElementById("q");
 ta.addEventListener("input", ()=>{ ta.style.height="auto"; ta.style.height=Math.min(ta.scrollHeight,130)+"px"; });
 ta.addEventListener("keydown", e=>{
   if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); ask(); }
+});
+document.querySelectorAll("#modelchips .chip").forEach(c=>{
+  c.onclick = ()=>{ document.getElementById("model").value = c.dataset.m; };
+});
+["qfs","qcolor","afs","acolor"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener("input", ()=>{ localStorage.setItem("ydh_"+id, el.value); applyFont(); });
 });
 </script>
 </body>
