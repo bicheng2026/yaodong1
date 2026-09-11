@@ -282,14 +282,7 @@ async function boot(){
     document.getElementById("loading").textContent = "索引载入失败：" + e.message;
   }
 }
-SS.load();
-MEM.load();
-renderMemCount();
-checkStatus();
-boot();
-applyFont();
-applyModel();
-applyThink();
+/* 初始化统一挪到文件末尾执行（SS / MEM 定义之后），避免 const 的 TDZ 报错 */
 
 /* ============ 检索 ============ */
 function tokenize(q){
@@ -876,6 +869,16 @@ document.querySelectorAll("#modelchips .chip").forEach(c=>{
   const el=document.getElementById(id);
   if(el) el.addEventListener("input", ()=>{ localStorage.setItem("ydh_"+id, el.value); applyFont(); });
 });
+
+/* ============ 启动（放在最后：此时 SS / MEM / 各函数均已就绪）============ */
+SS.load();
+MEM.load();
+renderMemCount();
+checkStatus();
+boot();
+applyFont();
+applyModel();
+applyThink();
 </script>
 </body>
 </html>
