@@ -48,6 +48,21 @@ header .sp{flex:1}
 .bubble.src{background:transparent;border:0;padding:0 0 8px;font-size:12.5px;color:var(--dim)}
 .bubble.src b{color:var(--gold);font-weight:500}
 .bubble.src div{padding:4px 0;border-bottom:1px dashed var(--line)}
+/* 联网参考：蓝色调，与文库来源（金色）明确区分 —— 一眼看出哪条不是原文 */
+.bubble.net{background:transparent;border:0;padding:0 0 8px;font-size:12.5px;color:var(--dim)}
+.bubble.net b{color:var(--blue);font-weight:500}
+.bubble.net div{padding:4px 0;border-bottom:1px dashed var(--line)}
+/* 联网面板：通道列表行 */
+.srcrow{display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px dashed var(--line);
+  font-size:12.5px;line-height:1.6}
+.srcrow .nm{flex:1;min-width:0}
+.srcrow .nm i{font-style:normal;color:var(--dim);font-size:11px;display:block;margin-top:3px}
+.srcrow .tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:9px;
+  border:1px solid #6b4a3a;color:#d99a7a;white-space:nowrap;margin-left:6px;vertical-align:1px}
+.srcrow .st{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);
+  color:var(--dim);white-space:nowrap;flex-shrink:0;margin-top:1px}
+.srcrow .st.ok{border-color:var(--ok);color:var(--ok)}
+.srcrow .st.bad{border-color:#8a4a3f;color:#e07a6a}
   .msg.think .bubble{background:transparent;border:1px dashed var(--line);font-size:12px;color:var(--dim);padding:10px 14px}
   .msg.think .who{cursor:pointer;user-select:none}
 #bar{padding:10px 16px 16px;border-top:1px solid var(--line);background:var(--bg2)}
@@ -66,12 +81,12 @@ header .sp{flex:1}
   align-items:center;justify-content:center;padding:20px}
 #set{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;
   width:100%;max-width:420px;max-height:86vh;overflow-y:auto}
-/* ---------- 会话历史 / 长期记忆 面板 ---------- */
-#sesmask,#memmask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;
+/* ---------- 会话历史 / 长期记忆 / 联网参考 面板 ---------- */
+#sesmask,#memmask,#netmask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;
   align-items:center;justify-content:center;padding:20px}
-#ses,#mem{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;
+#ses,#mem,#net{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;
   width:100%;max-width:440px;max-height:86vh;overflow-y:auto}
-#ses h3,#mem h3{margin:0 0 14px;font-size:16px;color:var(--gold)}
+#ses h3,#mem h3,#net h3{margin:0 0 14px;font-size:16px;color:var(--gold)}
 .srow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line)}
 .srow .tt{flex:1;font-size:13.5px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .srow.cur .tt{color:var(--gold)}
@@ -86,9 +101,9 @@ header .sp{flex:1}
 #set label{display:block;font-size:12.5px;color:var(--dim);margin:12px 0 5px}
 #set input,#set select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
   background:var(--bg);color:var(--ink);font-size:14px}
-#set .btn,#ses .btn,#mem .btn{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--red);
+#set .btn,#ses .btn,#mem .btn,#net .btn{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--red);
   color:#fff;font-size:15px;cursor:pointer}
-#set .close,#ses .close,#mem .close{margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
+#set .close,#ses .close,#mem .close,#net .close{margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
   background:transparent;color:var(--dim);cursor:pointer}
   .chip{font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;color:var(--dim);cursor:pointer}
   .chip:hover{border-color:var(--gold);color:var(--ink)}
@@ -858,7 +873,7 @@ async function distill(q, ans, cfg){
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
       body: JSON.stringify({model: cfg.mdl, stream:false, temperature:0.3,
         messages:[
-          {role:"system", content:"你负责维护用户的长期记忆。从这轮问答中提炼【值得长期记住】的用户信息：身份、处境、偏好、长期目标、正在面对的事。只输出提炼结果，每条一行，最多 2 条，每条不超过 40 字；不要编号、不要解释、不要客套。若没有值得长期记住的内容，只输出 NONE。"},
+          {role:"system", content:"你负责维护用户的长期记忆。从这轮问答中提炼【值得长期记住】的用户信息：身份、处境、偏好、长期目标、正在面对的事。只输出提炼结果，每条一行，最多 2 条，每条不超过 40 字；不要编号、不要解释、不要客套。严禁提炼任何来自联网检索的时事、新闻或外部资讯——只提炼用户本人的长期信息。若没有值得长期记住的内容，只输出 NONE。"},
           {role:"user", content:`【用户提问】\n${q}\n\n【回答要点】\n${String(ans).slice(0,1200)}`}
         ]})
     });
