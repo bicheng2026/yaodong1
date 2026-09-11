@@ -65,13 +65,29 @@ header .sp{flex:1}
   align-items:center;justify-content:center;padding:20px}
 #set{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;
   width:100%;max-width:420px;max-height:86vh;overflow-y:auto}
+/* ---------- 会话历史 / 长期记忆 面板 ---------- */
+#sesmask,#memmask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;
+  align-items:center;justify-content:center;padding:20px}
+#ses,#mem{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;
+  width:100%;max-width:440px;max-height:86vh;overflow-y:auto}
+#ses h3,#mem h3{margin:0 0 14px;font-size:16px;color:var(--gold)}
+.srow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.srow .tt{flex:1;font-size:13.5px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow.cur .tt{color:var(--gold)}
+.srow button,.mrow .del{font-size:11.5px;color:var(--dim);cursor:pointer;border:1px solid var(--line);
+  border-radius:6px;padding:2px 7px;background:transparent}
+.srow button:hover,.mrow .del:hover{border-color:var(--gold);color:var(--ink)}
+.mrow{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.mrow .tx{flex:1;font-size:13px;line-height:1.6}
+.mrow.off .tx{opacity:.45}
+#memcnt{color:var(--gold);font-size:11px}
 #set h3{margin:0 0 14px;font-size:16px;color:var(--gold)}
 #set label{display:block;font-size:12.5px;color:var(--dim);margin:12px 0 5px}
 #set input,#set select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
   background:var(--bg);color:var(--ink);font-size:14px}
-#set .btn{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--red);
+#set .btn,#ses .btn,#mem .btn{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--red);
   color:#fff;font-size:15px;cursor:pointer}
-#set .close{margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
+#set .close,#ses .close,#mem .close{margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
   background:transparent;color:var(--dim);cursor:pointer}
   .chip{font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;color:var(--dim);cursor:pointer}
   .chip:hover{border-color:var(--gold);color:var(--ink)}
@@ -116,6 +132,8 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     <div class="s" id="curmodel" style="font-size:11px">中继：—</div>
     </div>
     <div class="sp" data-page-node-id="fXxpKFMq4BcDkGeoimrdYo"></div>
+    <button class="iconbtn" onclick="openSess()" title="历史会话">会话</button>
+    <button class="iconbtn" onclick="openMem()" title="长期记忆">记忆<span id="memcnt"></span></button>
     <button class="iconbtn" onclick="openSet()" data-page-node-id="fTapkwyw8yFZCBwaswxoy0">设置</button>
   </header>
   <div id="chat" data-page-node-id="wMN31CE1E1lg7BQz5Rt4wA"><div id="loading" data-page-node-id="A1bu5cJ8CXN7UT3FwGTiSQ">正在载入文库索引…</div></div>
@@ -126,6 +144,28 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
       <button id="send" onclick="ask()" data-page-node-id="VgRdXlmey1kmJv9kv4LYbX">发送</button>
     </div>
     <div class="tip" data-page-node-id="GQRc5qa4fT5kjdVM096tBU">生活、学习、工作上的困惑都能问，会结合经典著作给你参谋。Enter 发送 / Shift+Enter 换行</div>
+  </div>
+</div>
+
+<div id="sesmask">
+  <div id="ses">
+    <h3>历史会话</h3>
+    <div id="seslist"></div>
+    <button class="btn" onclick="newSession()">新建会话</button>
+    <button class="close" onclick="closeSess()">关闭</button>
+    <button class="close" onclick="SS.clearAll()">清空全部</button>
+    <div class="hint">会话保存在本机浏览器，换设备不同步。条数过多会占用浏览器存储，可随手删除。</div>
+  </div>
+</div>
+
+<div id="memmask">
+  <div id="mem">
+    <h3>长期记忆</h3>
+    <div class="hint" style="margin:-8px 0 10px">每次回答后由模型后台自动提炼。勾选者才会注入之后的提问 —— 接入由你自主选择。</div>
+    <div id="memlist"></div>
+    <button class="btn" onclick="addMemManual()">手动添加一条</button>
+    <button class="close" onclick="closeMem()">关闭</button>
+    <button class="close" onclick="MEM.clearAll()">清空全部</button>
   </div>
 </div>
 
@@ -178,8 +218,14 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 /* ============ 配置 ============ */
 const DEFAULT_PW_HASH = "3c4049d6b7d4bf99e8e0dd71e2a07ffa608f0fbc57acaf304c6d3135993aa7f7"; // yanan2026
 const IDX = "data/index.json", LIBP = "lib/";
+/* 原文分片通道（2026-09-11 新增）
+   raw.githubusercontent.com 不压缩、支持 HTTP Range、带 CORS，
+   可按字节区间精准取单章：整卷 2.85MB/72s → 单章约 8KB/0.3s。
+   GitHub Pages 通道会 gzip，Range 坐标随之错位（实测返回的压缩片段无法解压），
+   只能整卷取 —— 仅作 raw 不可达时的回落。 */
+const RAWBASE = "https://raw.githubusercontent.com/bicheng2026/yaodong1/main/lib/";
 let DOCS = [], cache = {}, busy = false;
-const VERSION = "2026.09.10";
+const VERSION = "2026.09.11";
 
 /* ============ 密码 ============ */
 async function sha256(s){
@@ -231,15 +277,14 @@ async function boot(){
     DOCS = j.docs;
     const n = DOCS.reduce((a,d)=>a+d.s.length,0);
     document.getElementById("stat").textContent = `${DOCS.length} 部文献 · ${n} 章节`;
-    document.getElementById("loading").innerHTML =
-      `<div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
-       <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>学习、班级工作、人际、心态上的困惑都可以问，我会调取经典著作的思想为你参谋。</div>
-       <div style="margin-top:14px;font-size:12px">试试：「和室友闹矛盾了怎么处理」「最近状态很差、提不起劲」「班里活动没人愿意配合」</div>
-       <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION}</div>`;
+    renderChat();   /* 恢复上次会话；无历史则显示欢迎语 */
   }catch(e){
     document.getElementById("loading").textContent = "索引载入失败：" + e.message;
   }
 }
+SS.load();
+MEM.load();
+renderMemCount();
 checkStatus();
 boot();
 applyFont();
@@ -368,25 +413,67 @@ function findRelated(txt, q, maxOut=3){
   }
   return out;
 }
+/* 路径逐段编码（保留 / 分隔） */
+function encPath(f){ return f.split("/").map(encodeURIComponent).join("/"); }
+/* 整卷文本（回落通道 / 卷内定位用），按卷缓存 */
 async function full(d){
-  if(cache[d.f]) return cache[d.f];
-  const t = await (await fetch(LIBP + d.f)).text();
-  cache[d.f] = t; return t;
+  const k = "F:" + d.f;
+  if(cache[k]) return cache[k];
+  const t = await (await fetch(LIBP + encPath(d.f))).text();
+  cache[k] = t; return t;
 }
-function sliceSec(txt, d, i, max=2600){
+/* 按字节区间取文：主通道 raw（不压缩，坐标即原始字节）；失败则回落 Pages 整卷切片 */
+async function fetchRange(f, from, to){
+  const key = "R:" + f + "@" + from + "-" + to;
+  if(cache[key] !== undefined) return cache[key];
+  try{
+    const r = await fetch(RAWBASE + encPath(f), {headers:{Range:`bytes=${from}-${to-1}`}});
+    if(r.status === 206){
+      const t = new TextDecoder("utf-8").decode(await r.arrayBuffer()).replace(/\uFFFD+$/,"");
+      cache[key] = t; return t;
+    }
+    if(r.status === 200){                       // 服务器忽略 Range，返回了整卷
+      const whole = await r.text();
+      cache["F:" + f] = whole;
+      const t = whole.slice(from, to).replace(/\uFFFD+$/,"");
+      cache[key] = t; return t;
+    }
+  }catch(e){ /* 静默落到回落通道 */ }
+  const whole = await full({f});
+  const seg = new TextEncoder().encode(whole).slice(from, to);
+  const t = new TextDecoder("utf-8").decode(seg).replace(/^\uFFFD+|\uFFFD+$/g,"");
+  cache[key] = t; return t;
+}
+/* 取某一章正文（字节偏移取自索引；max 为字节数，约合 2600 中文字）
+   部分"章"是卷内的目录式条目（只有标题没有正文），此时向后多取一段，
+   保证送给模型的【原文】里有实际内容 */
+async function sliceSec(d, i, max=7800){
   const a = d.s[i][1];
-  const b = (i+1<d.s.length) ? d.s[i+1][1] : d.n;
-  return txt.slice(a, Math.min(b, a+max)).replace(/^#{2,3}\s+.*$/m,"").trim();
+  const b = (i+1 < d.s.length) ? d.s[i+1][1] : d.n;
+  const strip = s => s.replace(/^#{1,3}\s+.*$/gm,"").trim();
+  let body = strip(await fetchRange(d.f, a, Math.min(b, a + max)));
+  if(body.length < 120){
+    body = strip(await fetchRange(d.f, a, Math.min(d.n, a + max * 4)));
+  }
+  return body;
+}
+/* 卷内定位：只取该卷开头几章的区间，不再拉整卷 */
+async function headSpan(d, bytes=30000){
+  const upto = Math.min(d.s.length - 1, 5);
+  const end = (d.s[upto] ? d.s[upto][1] : 0) + bytes;
+  return await fetchRange(d.f, 0, Math.min(d.n, end));
 }
 
 /* ============ 提问 ============ */
+/* 写一条消息：同时落盘到当前会话，并画到界面 */
 function addMsg(who, html, cls){
+  const rec = {who, html, cls: cls||"",
+               text: String(html).replace(/<[^>]*>/g,"")};
+  SS.push(rec);
+  const bub = paintMsg(rec);
   const c = document.getElementById("chat");
-  const m = document.createElement("div");
-  m.className = "msg " + (cls||"");
-  m.innerHTML = `<div class="who">${who}</div><div class="bubble">${html}</div>`;
-  c.appendChild(m); c.scrollTop = c.scrollHeight;
-  return m.querySelector(".bubble");
+  if(c) c.scrollTop = c.scrollHeight;
+  return bub;
 }
 const esc = s => s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
@@ -427,20 +514,19 @@ async function ask(){
     }
   }
   for(const h of hits) push(h.d, h.i, h.ti||h.d.t);
-  // ③ 取正文
-  const parts = [];
-  for(const h of cands.slice(0,8)){
+  // ③ 取正文（并发；原为串行整卷下载，实测 4 卷就要 101 秒）
+  const picked = cands.slice(0, 6);
+  const got = await Promise.all(picked.map(async h=>{
     try{
-      const t = await full(h.d);
-      if(h.i>=0){
-        const body = sliceSec(t, h.d, h.i);
-        if(body) parts.push({src:`${h.d.t} · ${h.ti}`, txt:body});
-      } else {
-        const paras = findRelated(t, q);
-        paras.forEach((p,k)=>{ parts.push({src:`${h.d.t}（卷内定位${k+1}）`, txt:p}); });
+      if(h.i >= 0){
+        const body = await sliceSec(h.d, h.i);
+        return body ? {src:`${h.d.t} · ${h.ti}`, txt:body} : null;
       }
-    }catch(e){}
-  }
+      const span = await headSpan(h.d);
+      return findRelated(span, q).map((p,k)=>({src:`${h.d.t}（卷内定位${k+1}）`, txt:p}));
+    }catch(e){ return null; }
+  }));
+  const parts = got.flat().filter(Boolean);
   const ctx = parts.map((p,i)=>`〔${i+1}〕${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
   const hasRef = parts.length > 0;
   const sys = `你是「窑洞一号」——一位以马克思列宁主义、毛泽东思想武装头脑的参谋长与青年导师。向你提问的是一位大学生（常任班干部），在现实的学习、班级工作、人际关系、个人心态上遇到困惑，需要你真诚的分析、开导与具体办法。
@@ -472,13 +558,18 @@ async function ask(){
   }
   const b = addMsg("窑洞一号", "…");
   let acc = "", racc = "", hasThink = false;
+  /* 长期记忆：只注入被勾选启用的条目，接入由用户自主选择 */
+  const mems = MEM.active();
+  const memTxt = mems.length
+    ? `【关于我的长期记忆】（供参考，别生硬复述）\n${mems.map((m,i)=>`（${i+1}）${m.text}`).join("\n")}\n\n`
+    : "";
   try{
     const r = await fetch(cfg.base + "/chat/completions", {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
       body: JSON.stringify(Object.assign({model:mdl, stream:true, temperature:0.7,
         messages:[{role:"system",content:sys},{role:"user",content:
-          (ctx ? `【原文】\n${ctx}\n\n` : "") + `【我的困惑】\n${q}`}]},
+          memTxt + (ctx ? `【原文】\n${ctx}\n\n` : "") + `【我的困惑】\n${q}`}]},
         think ? {thinking:{type:"enabled"}, reasoning_effort:"high"} : {thinking:{type:"disabled"}}))
     });
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,200));
@@ -505,6 +596,12 @@ async function ask(){
     b.textContent = "调用失败：" + e.message + "\n\n请检查设置里的接口地址、API Key、模型名。";
   }
   busy=false; document.getElementById("send").disabled=false;
+  /* 落盘本轮对话（流式过程中内容一直在变，收尾时统一回写存储） */
+  if(b && b._rec) b._rec.html = esc(b.textContent);
+  if(tb && tb._rec) tb._rec.html = esc(tb.textContent);
+  SS.touch();
+  /* 后台提炼长期记忆：回答已显示完毕，提炼不占用等待时间，失败静默 */
+  if(acc.trim()) distill(q, acc, cfg);
 }
 
 function applyFont(){
@@ -550,6 +647,184 @@ function typeInto(el, text, rate){
   requestAnimationFrame(step);
 }
 
+/* ============ 会话历史（本机 localStorage 持久化）============ */
+const SS = {
+  K:"ydh_sessions", C:"ydh_cur", MAX:40, MSG_MAX:200,
+  list:[], curId:"",
+  load(){
+    try{ this.list = JSON.parse(localStorage.getItem(this.K)||"[]"); }catch(e){ this.list = []; }
+    if(!Array.isArray(this.list)) this.list = [];
+    this.curId = localStorage.getItem(this.C) || "";
+    if(!this.list.length) this.new_();
+  },
+  save(){
+    try{ localStorage.setItem(this.K, JSON.stringify(this.list)); }
+    catch(e){ /* 配额满：从最旧的会话开始丢弃，保证当前会话可用 */
+      while(this.list.length > 1){
+        this.list.pop();
+        try{ localStorage.setItem(this.K, JSON.stringify(this.list)); return; }catch(_){}
+      }
+    }
+  },
+  cur(){ return this.list.find(s=>s.id===this.curId) || this.new_(); },
+  new_(){
+    const s = {id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+               title:"新会话", ts:Date.now(), msgs:[]};
+    this.list.unshift(s); this.curId = s.id;
+    localStorage.setItem(this.C, s.id); this.save();
+    return s;
+  },
+  switchTo(id){
+    if(!this.list.some(s=>s.id===id)) return;
+    this.curId = id; localStorage.setItem(this.C, id); this.save();
+    renderChat(); renderSession();
+  },
+  del(id){
+    this.list = this.list.filter(s=>s.id!==id);
+    if(!this.list.length) this.new_();
+    else { if(this.curId===id){ this.curId = this.list[0].id; localStorage.setItem(this.C, this.curId); }
+           this.save(); }
+    renderChat(); renderSession();
+  },
+  rename(id){
+    const s = this.list.find(x=>x.id===id); if(!s) return;
+    const t = prompt("会话名称", s.title);
+    if(t!=null){ s.title = t.trim() || s.title; this.save(); renderSession(); }
+  },
+  clearAll(){
+    if(!confirm("清空全部历史会话？此操作只影响本机浏览器。")) return;
+    this.list = []; this.new_(); renderChat(); renderSession();
+  },
+  push(rec){
+    const s = this.cur();
+    s.msgs.push(rec);
+    if(s.msgs.length > this.MSG_MAX) s.msgs.shift();
+    if(s.title==="新会话" && rec.cls==="me" && rec.text) s.title = rec.text.slice(0,18);
+    s.ts = Date.now(); this.save();
+  },
+  touch(){ const s = this.cur(); s.ts = Date.now(); this.save(); }
+};
+
+/* 把一条记录画进聊天区，并把记录挂在气泡上便于后续回写 */
+function paintMsg(rec){
+  const c = document.getElementById("chat");
+  const m = document.createElement("div");
+  m.className = "msg " + (rec.cls||"");
+  m.innerHTML = `<div class="who">${rec.who}</div><div class="bubble">${rec.html}</div>`;
+  c.appendChild(m);
+  if(rec.cls === "think"){
+    const bub = m.querySelector(".bubble");
+    m.querySelector(".who").onclick = ()=>{ bub.style.display = bub.style.display==="none" ? "block" : "none"; };
+  }
+  const bub = m.querySelector(".bubble");
+  bub._rec = rec;
+  return bub;
+}
+
+function renderChat(){
+  const c = document.getElementById("chat"); if(!c) return;
+  const s = SS.cur();
+  c.innerHTML = "";
+  if(!s.msgs.length){
+    const n = DOCS.reduce((a,d)=>a+d.s.length,0);
+    c.innerHTML = `<div id="loading"><div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
+      <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>学习、班级工作、人际、心态上的困惑都可以问，我会调取经典著作的思想为你参谋。</div>
+      <div style="margin-top:14px;font-size:12px">试试：「和室友闹矛盾了怎么处理」「最近状态很差、提不起劲」「班里活动没人愿意配合」</div>
+      <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION}${MEM.list.length ? ` · 长期记忆 ${MEM.list.length} 条` : ""}</div></div>`;
+    return;
+  }
+  for(const rec of s.msgs) paintMsg(rec);
+  c.scrollTop = c.scrollHeight;
+}
+
+function renderSession(){
+  const box = document.getElementById("seslist"); if(!box) return;
+  box.innerHTML = SS.list.map(s=>{
+    const d = new Date(s.ts);
+    const when = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return `<div class="srow${s.id===SS.curId?" cur":""}">
+      <div class="tt" onclick="SS.switchTo('${s.id}')">${esc(s.title)}
+        <span style="color:var(--dim);font-size:11.5px"> · ${s.msgs.length}条 · ${when}</span></div>
+      <button onclick="SS.rename('${s.id}')">改名</button>
+      <button onclick="SS.del('${s.id}')">删</button>
+    </div>`;
+  }).join("") || `<div class="hint">暂无会话</div>`;
+}
+function openSess(){ renderSession(); document.getElementById("sesmask").style.display = "flex"; }
+function closeSess(){ document.getElementById("sesmask").style.display = "none"; }
+function newSession(){ SS.new_(); renderChat(); renderSession(); closeSess(); }
+
+/* ============ 长期记忆 ============ */
+const MEM = {
+  K:"ydh_memory", MAX:60,
+  list:[],
+  load(){
+    try{ this.list = JSON.parse(localStorage.getItem(this.K)||"[]"); }catch(e){ this.list = []; }
+    if(!Array.isArray(this.list)) this.list = [];
+  },
+  save(){
+    try{ localStorage.setItem(this.K, JSON.stringify(this.list)); }
+    catch(e){
+      while(this.list.length > 1){
+        this.list.pop();
+        try{ localStorage.setItem(this.K, JSON.stringify(this.list)); return; }catch(_){}
+      }
+    }
+  },
+  active(){ return this.list.filter(m=>m.on!==false); },
+  add(text){
+    const t = (text||"").trim(); if(t.length < 4) return;
+    if(this.list.some(m=>m.text===t)) return;
+    this.list.unshift({id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,4),
+                       text:t, ts:Date.now(), on:true});
+    if(this.list.length > this.MAX) this.list.length = this.MAX;
+    this.save(); renderMemList(); renderMemCount();
+  },
+  del(id){ this.list = this.list.filter(m=>m.id!==id); this.save(); renderMemList(); renderMemCount(); },
+  toggle(id){ const m = this.list.find(x=>x.id===id); if(!m) return;
+              m.on = (m.on===false); this.save(); renderMemList(); renderMemCount(); },
+  clearAll(){ if(!confirm("清空全部长期记忆？")) return;
+              this.list = []; this.save(); renderMemList(); renderMemCount(); }
+};
+function renderMemCount(){
+  const el = document.getElementById("memcnt");
+  if(el) el.textContent = MEM.list.length ? MEM.list.length : "";
+}
+function renderMemList(){
+  const box = document.getElementById("memlist"); if(!box) return;
+  box.innerHTML = MEM.list.map(m=>`<div class="mrow${m.on===false?" off":""}">
+      <input type="checkbox" ${m.on===false?"":"checked"} onchange="MEM.toggle('${m.id}')" style="margin-top:3px">
+      <div class="tx">${esc(m.text)}</div>
+      <button class="del" onclick="MEM.del('${m.id}')">删</button>
+    </div>`).join("") || `<div class="hint">还没有记忆。每次回答后会自动提炼。</div>`;
+}
+function openMem(){ renderMemList(); document.getElementById("memmask").style.display = "flex"; }
+function closeMem(){ document.getElementById("memmask").style.display = "none"; }
+function addMemManual(){ const t = prompt("要记住什么？"); if(t!=null) MEM.add(t); }
+
+/* 后台提炼：在回答结束后异步执行，不占用等待时间；失败静默 */
+async function distill(q, ans, cfg){
+  try{
+    const r = await fetch(cfg.base + "/chat/completions", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
+      body: JSON.stringify({model: cfg.mdl, stream:false, temperature:0.3,
+        messages:[
+          {role:"system", content:"你负责维护用户的长期记忆。从这轮问答中提炼【值得长期记住】的用户信息：身份、处境、偏好、长期目标、正在面对的事。只输出提炼结果，每条一行，最多 2 条，每条不超过 40 字；不要编号、不要解释、不要客套。若没有值得长期记住的内容，只输出 NONE。"},
+          {role:"user", content:`【用户提问】\n${q}\n\n【回答要点】\n${String(ans).slice(0,1200)}`}
+        ]})
+    });
+    if(!r.ok) return;
+    const j = await r.json();
+    const out = (j.choices?.[0]?.message?.content || "").trim();
+    if(!out || /^NONE/i.test(out)) return;
+    out.split("\n")
+       .map(s=>s.replace(/^[\s\d.、（）()\-*#]+/,"").trim())
+       .filter(s=>s.length>=4 && s.length<=60 && !/^NONE$/i.test(s))
+       .slice(0,2).forEach(s=>MEM.add(s));
+  }catch(e){ /* 静默 */ }
+}
+
 /* ============ 设置 ============ */
 function openSet(){
   document.getElementById("base").value = localStorage.getItem("ydh_base")||"https://api.deepseek.com/v1";
@@ -585,6 +860,8 @@ async function saveSet(){
   closeSet();
 }
 document.getElementById("mask").addEventListener("click", e=>{ if(e.target.id==="mask") closeSet(); });
+document.getElementById("sesmask").addEventListener("click", e=>{ if(e.target.id==="sesmask") closeSess(); });
+document.getElementById("memmask").addEventListener("click", e=>{ if(e.target.id==="memmask") closeMem(); });
 
 /* ============ 输入 ============ */
 const ta = document.getElementById("q");
