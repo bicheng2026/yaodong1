@@ -8,6 +8,7 @@
 :root{
   --bg:#171310; --bg2:#211b16; --card:#261f19; --line:#3a2f26;
   --ink:#efe6da; --dim:#a2937f; --red:#c0392b; --gold:#d8a44f; --ok:#7fb069;
+  --blue:#6ea8d8;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -138,12 +139,43 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
   </header>
   <div id="chat" data-page-node-id="wMN31CE1E1lg7BQz5Rt4wA"><div id="loading" data-page-node-id="A1bu5cJ8CXN7UT3FwGTiSQ">正在载入文库索引…</div></div>
   <div id="bar" data-page-node-id="XlQxXg21vo4RxwIA3sYFOs">
-    <button id="thinkbtn" class="thinkbtn" onclick="toggleThink()">💭 深度思考：关</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button id="thinkbtn" class="thinkbtn" style="margin:0" onclick="toggleThink()">💭 深度思考：关</button>
+      <button id="netbtn" class="thinkbtn" style="margin:0" onclick="openNet()">🌐 联网参考：关</button>
+    </div>
     <div class="row" data-page-node-id="CpEg9z3DM3K6jeMZPgZ0rA">
       <textarea id="q" rows="1" placeholder="问点什么？例如：最近班里活动没人配合，怎么办？"></textarea>
       <button id="send" onclick="ask()" data-page-node-id="VgRdXlmey1kmJv9kv4LYbX">发送</button>
     </div>
     <div class="tip" data-page-node-id="GQRc5qa4fT5kjdVM096tBU">生活、学习、工作上的困惑都能问，会结合经典著作给你参谋。Enter 发送 / Shift+Enter 换行</div>
+  </div>
+</div>
+
+<div id="netmask">
+  <div id="net">
+    <h3>联网参考</h3>
+    <div class="hint" style="margin:-8px 0 12px;line-height:1.8">
+      联网只做<b style="color:var(--blue)">时效性补充</b>：回答的骨架与依据始终是你的文库原文。<br>
+      联网内容单独取用、单独标注（蓝色），<b>不写入文库、不进长期记忆</b>，刷新即清。
+    </div>
+    <label style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--ink);line-height:1.6">
+      <input type="checkbox" id="netsw" onchange="NET.setSw(this.checked)" style="width:auto;margin:3px 0 0;flex-shrink:0">
+      <span>开启联网参考<br><span style="color:var(--dim);font-size:11.5px">每轮提问自动并发检索，6 秒硬超时；超时或不通则自动跳过，不影响文库问答。</span></span>
+    </label>
+
+    <div style="font-size:13px;color:var(--gold);margin:18px 0 4px">联网信息来源</div>
+    <div class="hint" style="margin:0 0 6px;line-height:1.8">
+      <b style="color:#7fb069">国内直连</b>：博查 / 智谱，需自备搜索 API Key，毫秒级响应，<b>无需科学上网</b>（Key 只存本机浏览器）；<br>
+      <b style="color:#d99a7a">需科学上网</b>：维基百科 / Jina / 必应，免 Key，但境内直连不可达。
+    </div>
+    <div id="netlist"></div>
+
+    <button class="btn" onclick="NET.probeAll()">检测各通道连通性</button>
+    <div id="netprobe" class="hint" style="margin-top:10px;line-height:1.8"></div>
+
+    <div class="hint" id="netstat" style="margin-top:14px"></div>
+    <button class="close" onclick="NET.reset()">重置本次联网统计</button>
+    <button class="close" onclick="closeNet()">关闭</button>
   </div>
 </div>
 
@@ -508,17 +540,23 @@ async function ask(){
   }
   for(const h of hits) push(h.d, h.i, h.ti||h.d.t);
   // ③ 取正文（并发；原为串行整卷下载，实测 4 卷就要 101 秒）
+  //    联网检索同时并发发出——两条链路互不阻塞、互不污染：
+  //    原文来自文库（raw 分片），联网来自公开网络，各走各的缓存。
   const picked = cands.slice(0, 6);
-  const got = await Promise.all(picked.map(async h=>{
-    try{
-      if(h.i >= 0){
-        const body = await sliceSec(h.d, h.i);
-        return body ? {src:`${h.d.t} · ${h.ti}`, txt:body} : null;
-      }
-      const span = await headSpan(h.d);
-      return findRelated(span, q).map((p,k)=>({src:`${h.d.t}（卷内定位${k+1}）`, txt:p}));
-    }catch(e){ return null; }
-  }));
+  const netP = NET.on ? NET.gather(q) : Promise.resolve({txt:"", list:[]});
+  const [got, netRes] = await Promise.all([
+    Promise.all(picked.map(async h=>{
+      try{
+        if(h.i >= 0){
+          const body = await sliceSec(h.d, h.i);
+          return body ? {src:`${h.d.t} · ${h.ti}`, txt:body} : null;
+        }
+        const span = await headSpan(h.d);
+        return findRelated(span, q).map((p,k)=>({src:`${h.d.t}（卷内定位${k+1}）`, txt:p}));
+      }catch(e){ return null; }
+    })),
+    netP
+  ]);
   const parts = got.flat().filter(Boolean);
   const ctx = parts.map((p,i)=>`〔${i+1}〕${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
   const hasRef = parts.length > 0;
@@ -531,13 +569,25 @@ async function ask(){
 3）下面【原文】已编号〔1〕〔2〕…。你的回答只要用到某条原文的观点或原话，就必须在该句或该段末尾用〔编号〕标出来（例：……这就是实事求是〔2〕），让读者一眼看出哪句话对应哪篇、你从哪引的；不要只在开头笼统提「引用了文献」却不标位置。没用到就不标；绝不伪造出处。若没有【原文】或原文不足，凭你对经典著作的准确理解作答，切勿编造引文。
 4）给出的建议要具体到能直接去做的动作，贴合大学生活、班级事务、同学相处的实际；语言真诚平实，用简体中文，条理清晰。
   5）回复用纯中文自然叙述，不要使用 ✳、◆、▍ 等装饰符号，也不要用 Markdown 标记（如 **、#）；需要分点时用（一）（二）或 1. 2. 编号，保持干净易读。
-  6）像真人学长/朋友一样自然聊天，不要机械套用分析框架，不要每段硬塞方法论术语；有温度、口语化，顺着用户的语气走，避免千篇一律的套路感。讨论经典著作时自然引用，不堆砌术语标签。`;
+  6）像真人学长/朋友一样自然聊天，不要机械套用分析框架，不要每段硬塞方法论术语；有温度、口语化，顺着用户的语气走，避免千篇一律的套路感。讨论经典著作时自然引用，不堆砌术语标签。
+  7）若下面附有【联网参考】，那是刚从公开网络检索到的资料，只作背景交代与时效性补充。你的分析骨架、判断依据、价值立场必须仍然来自【原文】以及马克思列宁主义、毛泽东思想的立场观点方法；联网内容只用来把「新近发生的事」讲准，绝不能取代、削弱或架空原文的判断。两者若不一致，以【原文】为准，并明确说出分歧在哪。凡用到了联网内容，须在该句末尾标〔网序号〕（例：……这一轮产业调整的提法见诸近期公开报道〔网1〕），让读者一眼分清哪句来自文库原文、哪句来自网络。没用到的不要标，更不要把联网内容伪装成原文引用。`;
 
-  // 来源卡片
+  // 来源卡片（金色 = 文库原文）
   if(hasRef){
     const srcHtml = `<b>本次为你调用的思想武器（${parts.length} 处）：</b>` + parts.map((p,i)=>
       `<div>〔${i+1}〕${esc(p.src)}</div>`).join("");
     addMsg("窑洞一号", srcHtml, "src");
+  }
+  // 联网来源卡片（蓝色 = 网络资料，与原文明确区分；刷新即清，不入文库）
+  if(netRes.list.length){
+    const netHtml = `<b>联网参考（${netRes.list.length} 条 · 公开网络实时取得，非原文）：</b>`
+      + netRes.list.map((x,i)=>`<div>〔网${i+1}〕${esc(x.src)} · ${esc(x.t)}</div>`).join("");
+    addMsg("窑洞一号", netHtml, "net");
+  } else if(NET.on && !NET.warned){
+    NET.warned = true;
+    addMsg("窑洞一号",
+      `<b>联网参考：本轮未取到内容</b><div>通道可能不可达（境外服务被阻断），已自动跳过。</div><div>文库原文检索与回答完全不受影响。可在「🌐 联网参考」面板里点检测查看各通道状态。</div>`,
+      "net");
   }
   // 深度思考块（仅深度思考模式创建）
   let tb = null, twrap = null;
@@ -556,13 +606,18 @@ async function ask(){
   const memTxt = mems.length
     ? `【关于我的长期记忆】（供参考，别生硬复述）\n${mems.map((m,i)=>`（${i+1}）${m.text}`).join("\n")}\n\n`
     : "";
+  /* 联网参考：独立段落，排在【原文】之后、【我的困惑】之前。
+     位置本身就在提示模型——原文是主证据，联网只是补充材料。 */
+  const netTxt = netRes.txt
+    ? `【联网参考】（公开网络实时检索所得，仅作背景与时效性补充，不能替代【原文】；与原文冲突时以原文为准）\n${netRes.txt}\n\n`
+    : "";
   try{
     const r = await fetch(cfg.base + "/chat/completions", {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
       body: JSON.stringify(Object.assign({model:mdl, stream:true, temperature:0.7,
         messages:[{role:"system",content:sys},{role:"user",content:
-          memTxt + (ctx ? `【原文】\n${ctx}\n\n` : "") + `【我的困惑】\n${q}`}]},
+          memTxt + (ctx ? `【原文】\n${ctx}\n\n` : "") + netTxt + `【我的困惑】\n${q}`}]},
         think ? {thinking:{type:"enabled"}, reasoning_effort:"high"} : {thinking:{type:"disabled"}}))
     });
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,200));
@@ -818,6 +873,276 @@ async function distill(q, ans, cfg){
   }catch(e){ /* 静默 */ }
 }
 
+/* ============ 联网参考（2026-09-11 新增）
+   三条铁律：
+   ① 隔离 —— 联网内容只进当轮上下文，用独立内存缓存；绝不写入文库索引/正文，
+      也不参与长期记忆提炼。刷新即清，检索结果不落 localStorage。
+      自备的搜索 Key 只存本机浏览器，与 API Key 同样待遇，不经过任何第三方后端。
+   ② 文库优先 —— 提示词里联网被明确限定为「补充」，不得取代原文结论；
+      两者冲突以原文为准，并在回答中明示分歧。
+   ③ 能通则用、不通即降级 —— 每轮硬超时，失败静默跳过，文库问答不受任何影响。
+
+   通道分两类：
+   · 国内直连（推荐）—— 博查 / 智谱 搜索 API，自备 Key，毫秒级，无需科学上网；
+   · 免 Key 境外 —— 维基百科 / Jina / 必应 RSS，需科学上网后才可达。 */
+const WIKI_ZH = "https://zh.wikipedia.org/w/api.php";
+const WIKI_EN = "https://en.wikipedia.org/w/api.php";
+
+const NET_SRC = [
+  { id:"bocha", name:"博查 Web Search", kind:"bocha", needKey:true, need:false,
+    desc:"约 50ms 响应，结果带正文摘要 · 需自备博查 API Key（有免费额度）",
+    hint:"博查 API Key，形如 sk-xxxxxxxx" },
+  { id:"zhipu", name:"智谱 Web Search", kind:"zhipu", needKey:true, need:false,
+    desc:"约 200ms 响应 · 需自备智谱 API Key（与你现在用的模型同源）",
+    hint:"智谱 API Key，形如 xxxxxxxx.xxxxxxxx" },
+  { id:"zhwiki", name:"中文维基百科", kind:"zhwiki", need:true,
+    desc:"免 Key · 搜索条目并取首段摘要 · 原生跨域（origin=*）",
+    probe:"https://zh.wikipedia.org/w/api.php?action=query&format=json&origin=*&meta=siteinfo" },
+  { id:"enwiki", name:"英文维基百科", kind:"enwiki", need:true,
+    desc:"免 Key · 英文条目更全，适合查概念、人名、术语",
+    probe:"https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&meta=siteinfo" },
+  { id:"jina", name:"Jina Reader", kind:"jina", need:true,
+    desc:"免 Key · 抓取任意网页正文并转纯文本（适合直接贴链接）",
+    probe:"https://r.jina.ai/https://example.com" },
+  { id:"bingrss", name:"必应搜索 RSS", kind:"bingrss", need:true,
+    desc:"免 Key · 域名国内可连，但无跨域头，须科学上网后经代理包装",
+    probe:"https://cn.bing.com/search?q=test&format=rss" }
+];
+
+/* HTML 属性安全转义（Key 可能含引号） */
+const escA = s => String(s==null?"":s).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const NET = {
+  K:"ydh_net", KK:"ydh_netkeys", TIMEOUT:6000, PER_SRC:3, MAX_CHARS:3600,
+  on:false, hits:0, ok:0, warned:false, cache:{}, lastProbe:{},
+  load(){ this.on = localStorage.getItem(this.K) === "1"; },
+  save(){ try{ localStorage.setItem(this.K, this.on?"1":"0"); }catch(e){} },
+
+  /* 自备 Key：只存本机 localStorage，与模型 API Key 同等待遇 */
+  keys(){ try{ return JSON.parse(localStorage.getItem(this.KK)||"{}") || {}; }catch(e){ return {}; } },
+  key(id){ return String(this.keys()[id]||"").trim(); },
+  setKey(id, v){
+    const k = this.keys(); k[id] = String(v||"").trim();
+    try{ localStorage.setItem(this.KK, JSON.stringify(k)); }catch(e){}
+  },
+
+  setSw(v){
+    this.on = !!v; this.save(); this.warned = false;
+    applyNet(); renderNetStat();
+    if(this.on) this.probeAll();
+  },
+  reset(){
+    this.hits = 0; this.ok = 0; this.warned = false; this.cache = {};
+    renderNetStat();
+    const p = document.getElementById("netprobe"); if(p) p.textContent = "";
+  },
+
+  /* 带硬超时的 fetch：任何情况下都会在 ms 内返回，绝不吊死主流程 */
+  async _t(url, ms, opt){
+    const ac = new AbortController();
+    const timer = setTimeout(()=>ac.abort(), ms || this.TIMEOUT);
+    try{
+      const r = await fetch(url, Object.assign({signal:ac.signal, cache:"no-store"}, opt||{}));
+      clearTimeout(timer);
+      return r;
+    }catch(e){ clearTimeout(timer); throw e; }
+  },
+
+  /* ---------- 各通道取数 ---------- */
+
+  /* 维基：generator=search 让搜索结果直接带上首段摘要，省掉二次往返 */
+  async _wiki(base, q){
+    const u = base + "?action=query&format=json&origin=*&generator=search"
+      + "&gsrsearch=" + encodeURIComponent(q)
+      + "&gsrlimit=" + this.PER_SRC
+      + "&prop=extracts&exintro=1&explaintext=1&exlimit=" + this.PER_SRC;
+    const r = await this._t(u, this.TIMEOUT);
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const j = await r.json();
+    const pages = Object.values((j && j.query && j.query.pages) || {});
+    return pages
+      .sort((a,b)=>(a.index||99)-(b.index||99))
+      .filter(p=>p.extract && p.extract.replace(/\s+/g,"").length > 40)
+      .map(p=>({t:p.title, x:p.extract.replace(/\s+/g," ").trim().slice(0,500)}));
+  },
+
+  /* 博查：POST /v1/web-search，国内直连，ACAO 为 * */
+  async _bocha(q){
+    const k = this.key("bocha"); if(!k) return [];
+    const r = await this._t("https://api.bochaai.com/v1/web-search", this.TIMEOUT, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+k},
+      body: JSON.stringify({query:q, count:this.PER_SRC, summary:true, freshness:"noLimit"})
+    });
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const j = await r.json();
+    const arr = (j && j.data && j.data.webPages && j.data.webPages.value) || [];
+    return arr.slice(0, this.PER_SRC).map(p=>({
+      t: p.name || p.siteName || "（无标题）",
+      x: String(p.summary || p.snippet || "").replace(/\s+/g," ").trim().slice(0,500)
+    })).filter(x=>x.x.length > 20);
+  },
+
+  /* 智谱：POST /api/paas/v4/web_search，国内直连，回显 Origin */
+  async _zhipu(q){
+    const k = this.key("zhipu"); if(!k) return [];
+    const r = await this._t("https://open.bigmodel.cn/api/paas/v4/web_search", this.TIMEOUT, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+k},
+      body: JSON.stringify({search_engine:"search_std", search_query:q})
+    });
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const j = await r.json();
+    const arr = (j && j.search_result) || [];
+    return arr.slice(0, this.PER_SRC).map(p=>({
+      t: p.title || p.media || "（无标题）",
+      x: String(p.content || "").replace(/\s+/g," ").trim().slice(0,500)
+    })).filter(x=>x.x.length > 20);
+  },
+
+  /* 按 kind 分派；带内存缓存，同一问题重复提问不再打网络 */
+  async _search(id, q){
+    const ck = id + "\u0000" + q;
+    if(this.cache[ck]) return this.cache[ck];
+    const kind = (NET_SRC.find(x=>x.id===id)||{}).kind;
+    let out = [];
+    if(kind === "bocha")       out = await this._bocha(q);
+    else if(kind === "zhipu")  out = await this._zhipu(q);
+    else if(kind === "zhwiki") out = await this._wiki(WIKI_ZH, q);
+    else if(kind === "enwiki") out = await this._wiki(WIKI_EN, q);
+    this.cache[ck] = out;
+    return out;
+  },
+
+  /* ---------- 连通性检测 ---------- */
+
+  /* 单条通道探活。能被浏览器真正读到内容、且拿到可用结果，才算「通」——
+     只建连不返数据（被墙吊死）或被跨域拦截，一律计为不通。 */
+  async probeOne(s){
+    if(s.needKey && !this.key(s.id))
+      return {id:s.id, ok:false, ms:0, skip:true, note:"未填写 Key"};
+    const t0 = performance.now();
+    try{
+      if(s.needKey){
+        const items = await this._search(s.id, "今日热点");
+        const ms = Math.round(performance.now()-t0);
+        return items.length
+          ? {id:s.id, ok:true, ms, note:"检索正常，返回 "+items.length+" 条"}
+          : {id:s.id, ok:false, ms, note:"有响应但无结果（Key 可能无效或无额度）"};
+      }
+      const r = await this._t(s.probe, 8000);
+      const ms = Math.round(performance.now()-t0);
+      if(!r.ok) return {id:s.id, ok:false, ms, note:"HTTP "+r.status};
+      const txt = await r.text();
+      if(!txt || txt.length < 20) return {id:s.id, ok:false, ms, note:"响应为空（疑被跨域拦截）"};
+      return {id:s.id, ok:true, ms, note:"可读 " + txt.length + " 字节"};
+    }catch(e){
+      const ms = Math.round(performance.now()-t0);
+      return {id:s.id, ok:false, ms,
+              note:(e && e.name === "AbortError") ? "超时/被阻断（"+ms+"ms）" : "不可达或被跨域拦截"};
+    }
+  },
+
+  /* 全量探活：并发跑完，结果写入面板 */
+  async probeAll(){
+    this.cache = {};   /* 探活前清缓存，保证检测的是真实网络状况 */
+    const box = document.getElementById("netprobe");
+    renderNetList({});
+    if(box) box.textContent = "正在检测…（各通道并发，最长 8 秒）";
+    const res = await Promise.all(NET_SRC.map(s=>this.probeOne(s)));
+    const map = {}; res.forEach(r=>map[r.id] = r);
+    this.lastProbe = map;
+    renderNetList(map);
+    const okN = res.filter(r=>r.ok).length;
+    const domestic = res.filter(r=>r.ok && ["bocha","zhipu"].includes(r.id)).length;
+    if(box) box.innerHTML = okN
+      ? `<b style="color:var(--ok)">${okN}/${res.length} 条通道可用</b>`
+        + (domestic ? "，其中含国内直连通道 —— 可以开启联网参考了。"
+                    : " —— 可以开启联网参考了（走的是需要科学上网的境外通道）。")
+      : `<b style="color:#e07a6a">0/${res.length} 条通道可用</b>。<br>
+         <b>两条国内直连通道</b>（博查 / 智谱）只要填上自己的搜索 API Key 就能用，<b>不需要科学上网</b>；<br>
+         <b>三条境外通道</b>（维基百科 / Jina / 必应）需要开启科学上网（代理、VPN）后回来重测。<br>
+         眼下联网参考会自动降级跳过，<b>文库问答完全不受影响</b>。`;
+  },
+
+  /* ---------- 主入口 ---------- */
+
+  /* 并发检索，按 NET_SRC 顺序取「第一个有结果的通道」——避免同一话题多源重复堆料。
+     任何一步失败都被吞掉，绝不因联网问题影响文库问答主流程。 */
+  async gather(q){
+    if(!this.on || !q) return {txt:"", list:[]};
+    this.hits++;
+    const avail = NET_SRC.filter(s => !s.needKey || this.key(s.id));
+    const outs = await Promise.all(avail.map(async s=>{
+      try{
+        const arr = await this._search(s.id, q);
+        return arr.length ? {src:s.name, items:arr} : null;
+      }catch(e){ return null; }
+    }));
+    const got = outs.filter(Boolean);
+    renderNetStat();
+    if(!got.length) return {txt:"", list:[]};
+    this.ok++;
+    const use = got[0];
+    const list = [], lines = [];
+    use.items.forEach((it, i)=>{
+      list.push({src:use.src, t:it.t});
+      lines.push(`〔网${i+1}〕${use.src} · ${it.t}\n${it.x}`);
+    });
+    return {txt: lines.join("\n\n").slice(0, this.MAX_CHARS), list};
+  }
+};
+
+function renderNetList(map){
+  const box = document.getElementById("netlist"); if(!box) return;
+  box.innerHTML = NET_SRC.map(s=>{
+    const r = map && map[s.id];
+    const st = !r ? `<span class="st">未检测</span>`
+      : r.ok ? `<span class="st ok">通 ${r.ms}ms</span>`
+      : r.skip ? `<span class="st">未配置</span>`
+               : `<span class="st bad">不通</span>`;
+    const tag = s.need
+      ? `<span class="tag">需科学上网</span>`
+      : `<span class="tag" style="border-color:#3a5a4a;color:#7fb069">国内直连</span>`;
+    const keyRow = s.needKey
+      ? `<div style="margin-top:6px"><input type="password" autocomplete="off"
+           placeholder="${escA(s.hint||"API Key")}" value="${escA(NET.key(s.id))}"
+           onchange="netKeyChange('${s.id}', this)"
+           style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:12.5px"></div>`
+      : "";
+    return `<div class="srcrow">
+      <div class="nm">${esc(s.name)}${tag}<i>${esc(s.desc)}</i>${keyRow}</div>
+      ${st}
+    </div>`;
+  }).join("");
+}
+function netKeyChange(id, el){
+  NET.setKey(id, el.value);
+  NET.cache = {};
+  const s = NET_SRC.find(x=>x.id===id); if(!s) return;
+  NET.probeOne(s).then(r=>{
+    const m = Object.assign({}, NET.lastProbe); m[id] = r;
+    NET.lastProbe = m; renderNetList(m);
+  });
+}
+function renderNetStat(){
+  const el = document.getElementById("netstat"); if(!el) return;
+  el.innerHTML = `本次会话：联网检索 ${NET.hits} 次，成功取回 ${NET.ok} 次；缓存 ${Object.keys(NET.cache).length} 条（仅存内存，刷新即清）。`;
+}
+function applyNet(){
+  const b = document.getElementById("netbtn");
+  if(b){ b.classList.toggle("on", NET.on); b.textContent = "🌐 联网参考：" + (NET.on?"开":"关"); }
+  const sw = document.getElementById("netsw");
+  if(sw) sw.checked = NET.on;
+}
+function toggleNet(){ NET.setSw(!NET.on); }
+function openNet(){
+  renderNetList(NET.lastProbe); renderNetStat(); applyNet();
+  document.getElementById("netmask").style.display = "flex";
+}
+function closeNet(){ document.getElementById("netmask").style.display = "none"; }
+
 /* ============ 设置 ============ */
 function openSet(){
   document.getElementById("base").value = localStorage.getItem("ydh_base")||"https://api.deepseek.com/v1";
@@ -855,6 +1180,7 @@ async function saveSet(){
 document.getElementById("mask").addEventListener("click", e=>{ if(e.target.id==="mask") closeSet(); });
 document.getElementById("sesmask").addEventListener("click", e=>{ if(e.target.id==="sesmask") closeSess(); });
 document.getElementById("memmask").addEventListener("click", e=>{ if(e.target.id==="memmask") closeMem(); });
+document.getElementById("netmask").addEventListener("click", e=>{ if(e.target.id==="netmask") closeNet(); });
 
 /* ============ 输入 ============ */
 const ta = document.getElementById("q");
@@ -873,12 +1199,15 @@ document.querySelectorAll("#modelchips .chip").forEach(c=>{
 /* ============ 启动（放在最后：此时 SS / MEM / 各函数均已就绪）============ */
 SS.load();
 MEM.load();
+NET.load();
 renderMemCount();
 checkStatus();
 boot();
 applyFont();
 applyModel();
 applyThink();
+applyNet();
+renderNetStat();
 </script>
 </body>
 </html>
