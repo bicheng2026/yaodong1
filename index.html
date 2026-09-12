@@ -52,6 +52,8 @@ header .sp{flex:1}
 .bubble.net{background:transparent;border:0;padding:0 0 8px;font-size:12.5px;color:var(--dim)}
 .bubble.net b{color:var(--blue);font-weight:500}
 .bubble.net div{padding:4px 0;border-bottom:1px dashed var(--line)}
+.bubble.sys{background:transparent;border:0;padding:0 0 8px;font-size:12px;color:var(--dim);opacity:.85}
+.bubble.sys b{color:var(--dim);font-weight:500}
 /* 联网面板：通道列表行 */
 .srcrow{display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px dashed var(--line);
   font-size:12.5px;line-height:1.6}
@@ -157,12 +159,14 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button id="thinkbtn" class="thinkbtn" style="margin:0" onclick="toggleThink()">💭 深度思考：关</button>
       <button id="netbtn" class="thinkbtn" style="margin:0" onclick="openNet()">🌐 联网参考：关</button>
+      <button id="altbtn" class="thinkbtn" style="margin:0" onclick="reaskAlt()" title="把上一个问题发到备用端点">🔁 换端点重问</button>
+      <button id="rwbtn" class="thinkbtn" style="margin:0" onclick="reaskRewrite()" title="自动改写成中性问法后重发">✎ 改写重问</button>
     </div>
     <div class="row" data-page-node-id="CpEg9z3DM3K6jeMZPgZ0rA">
-      <textarea id="q" rows="1" placeholder="问点什么？例如：最近班里活动没人配合，怎么办？"></textarea>
+      <textarea id="q" rows="1" placeholder="问点什么？有拿不准的事，随时来参谋"></textarea>
       <button id="send" onclick="ask()" data-page-node-id="VgRdXlmey1kmJv9kv4LYbX">发送</button>
     </div>
-    <div class="tip" data-page-node-id="GQRc5qa4fT5kjdVM096tBU">生活、学习、工作上的困惑都能问，会结合经典著作给你参谋。Enter 发送 / Shift+Enter 换行</div>
+    <div class="tip" data-page-node-id="GQRc5qa4fT5kjdVM096tBU">任何需要拿主意、想听意见的事都能问，会结合经典著作给你参谋。Enter 发送 / Shift+Enter 换行</div>
   </div>
 </div>
 
@@ -183,6 +187,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
       <b style="color:#7fb069">国内直连</b>：博查 / 智谱，需自备搜索 API Key，毫秒级响应，<b>无需科学上网</b>（Key 只存本机浏览器）；<br>
       <b style="color:#d99a7a">需科学上网</b>：维基百科 / Jina / 必应，免 Key，但境内直连不可达。
     </div>
+    <div class="hint" style="margin:0 0 8px;line-height:1.8">每条通道右侧的「启用」可手动开 / 关 —— 关掉的通道不参与检索（例如你只想用博查、不想让其它源掺进来）。</div>
     <div id="netlist"></div>
 
     <button class="btn" onclick="NET.probeAll()">检测各通道连通性</button>
@@ -233,6 +238,15 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     </div>
     <div class="hint">默认用最新 deepseek-v4-flash；点下方「深度思考」按钮自动切 deepseek-v4-pro。旧模型名 deepseek-chat/reasoner 已于 2026-07-24 停用。</div>
     <div class="hint" data-page-node-id="57LEAGaHsWeNN9LbIS4HLS">推荐 DeepSeek（便宜好用）；也支持智谱、通义、OpenAI、本地 Ollama 等兼容接口。</div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <div style="font-size:13px;color:var(--gold);margin:0 0 4px">备用端点（被审查拦截时一键换用）</div>
+    <label>备用接口地址</label>
+    <input id="base2" placeholder="https://open.bigmodel.cn/api/paas/v4">
+    <label>备用 API Key</label>
+    <input id="key2" type="password" placeholder="sk-...">
+    <label>备用模型名</label>
+    <input id="model2" placeholder="glm-4-flash">
+    <div class="hint">填好备用端点后，底部「🔁 换端点重问」可把同一问题发到另一家服务商——各家尺度不同，此路不通走彼路。备用 Key 与主链路同样只存本机浏览器。</div>
     <label data-page-node-id="EmNSUL7lST5cMORqZATLwu">修改访问密码（留空则保持原密码）</label>
     <input id="npw" type="password" placeholder="新密码" data-page-node-id="CeHqKe2LP79CAl4LzAKFN6">
     <button class="btn" onclick="saveSet()" data-page-node-id="Rudd1S57DG7vLnHtNA1B8q">保存</button>
@@ -517,23 +531,38 @@ function addMsg(who, html, cls){
 }
 const esc = s => s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
-async function ask(){
-  if(busy) return;
-  const el = document.getElementById("q");
-  const q = el.value.trim();
-  if(!q) return;
-  const cfg = {
-    base: (localStorage.getItem("ydh_base")||"https://api.deepseek.com/v1").replace(/\/$/,""),
-    key : localStorage.getItem("ydh_key")||"",
-    mdl : localStorage.getItem("ydh_model")||"deepseek-v4-flash"
+/* 读取某套端点的配置：which = "pri"（主，默认）或 "alt"（备用） */
+function cfgOf(which){
+  const alt = which === "alt";
+  return {
+    base: (localStorage.getItem(alt?"ydh_base2":"ydh_base")||(alt?"":"https://api.deepseek.com/v1")).replace(/\/$/,""),
+    key : localStorage.getItem(alt?"ydh_key2":"ydh_key")||"",
+    mdl : localStorage.getItem(alt?"ydh_model2":"ydh_model")||(alt?"":"deepseek-v4-flash")
   };
-  if(!cfg.key){ openSet(); alert("请先在设置里填写 API Key"); return; }
+}
+let _lastQ = "";
+
+async function ask(opt){
+  if(busy) return;
+  opt = opt || {};
+  const which = opt.which === "alt" ? "alt" : "pri";
+  const el = document.getElementById("q");
+  const q = (opt.q != null) ? String(opt.q).trim() : el.value.trim();
+  if(!q) return;
+  const cfg = cfgOf(which);
+  if(!cfg.key){ openSet(); alert(which==="alt" ? "请先在设置里填写「备用端点」的接口地址与 API Key" : "请先在设置里填写 API Key"); return; }
   const think = localStorage.getItem("ydh_think")==="1";
-  const mdl = think ? "deepseek-v4-pro" : cfg.mdl;
-  el.value = ""; el.style.height = "auto";
+  /* 深度思考只在主端点生效（pro 是 DeepSeek 的档位名，套到别家会 404） */
+  const mdl = (which==="pri" && think) ? "deepseek-v4-pro" : cfg.mdl;
+  if(opt.q == null){ el.value = ""; el.style.height = "auto"; }
   busy = true; document.getElementById("send").disabled = true;
 
-  addMsg("我", esc(q), "me");
+  _lastQ = q;
+  if(which === "alt"){
+    addMsg("系统", `🔁 已改用备用端点重发 · ${esc(cfg.mdl)}`, "sys");
+  } else {
+    addMsg("我", esc(q), "me");
+  }
   // ① 主题判定（思想导航；无主题命中时用概念映射兜底）
   const theme = themeMatch(q);
   const conc = theme ? null : conceptMatch(q);
@@ -575,14 +604,14 @@ async function ask(){
   const parts = got.flat().filter(Boolean);
   const ctx = parts.map((p,i)=>`〔${i+1}〕${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
   const hasRef = parts.length > 0;
-  const sys = `你是「窑洞一号」——一位以马克思列宁主义、毛泽东思想武装头脑的参谋长与青年导师。向你提问的是一位大学生（常任班干部），在现实的学习、班级工作、人际关系、个人心态上遇到困惑，需要你真诚的分析、开导与具体办法。
+  const sys = `你是「窑洞一号」——一位以马克思列宁主义、毛泽东思想武装头脑的参谋与思想顾问。用户把你当作随时可以请教意见的参谋：学习、工作、社会观察、人际关系、拿主意、个人心态……任何问题都可以来问，也可以只是找人商量、想听听分析。你要给出真诚、有见地、能落地的分析、开导与办法，不必揣测或预设提问者的身份与角色。
 
 回答要求：
   0）除非用户明确要求展开，否则先给一句话结论，再视需要展开，不要主动铺长。
   1）先共情、理解他的真实处境，再用方法论分析，最后给可操作的动作建议；不空谈大道理，不说套话。
 2）自然运用这些思想武器：实事求是；调查研究（"没有调查，没有发言权"）；群众路线（从群众中来、到群众中去，密切联系群众）；矛盾分析法（矛盾普遍存在、抓主要矛盾、看主流与支流、矛盾可以转化）；实践第一（实践出真知，知行合一）；批评与自我批评（团结—批评—团结）；战略上藐视、战术上重视；具体问题具体分析。
 3）下面【原文】已编号〔1〕〔2〕…。你的回答只要用到某条原文的观点或原话，就必须在该句或该段末尾用〔编号〕标出来（例：……这就是实事求是〔2〕），让读者一眼看出哪句话对应哪篇、你从哪引的；不要只在开头笼统提「引用了文献」却不标位置。没用到就不标；绝不伪造出处。若没有【原文】或原文不足，凭你对经典著作的准确理解作答，切勿编造引文。
-4）给出的建议要具体到能直接去做的动作，贴合大学生活、班级事务、同学相处的实际；语言真诚平实，用简体中文，条理清晰。
+4）给出的建议要具体到能直接去做的动作，贴合提问者所处的真实处境；语言真诚平实，用简体中文，条理清晰。不要预设提问者的身份或角色，就事论事、按需作答。
   5）回复用纯中文自然叙述，不要使用 ✳、◆、▍ 等装饰符号，也不要用 Markdown 标记（如 **、#）；需要分点时用（一）（二）或 1. 2. 编号，保持干净易读。
   6）像真人学长/朋友一样自然聊天，不要机械套用分析框架，不要每段硬塞方法论术语；有温度、口语化，顺着用户的语气走，避免千篇一律的套路感。讨论经典著作时自然引用，不堆砌术语标签。
   7）若下面附有【联网参考】，那是刚从公开网络检索到的资料，只作背景交代与时效性补充。你的分析骨架、判断依据、价值立场必须仍然来自【原文】以及马克思列宁主义、毛泽东思想的立场观点方法；联网内容只用来把「新近发生的事」讲准，绝不能取代、削弱或架空原文的判断。两者若不一致，以【原文】为准，并明确说出分歧在哪。凡用到了联网内容，须在该句末尾标〔网序号〕（例：……这一轮产业调整的提法见诸近期公开报道〔网1〕），让读者一眼分清哪句来自文库原文、哪句来自网络。没用到的不要标，更不要把联网内容伪装成原文引用。`;
@@ -666,6 +695,54 @@ async function ask(){
   if(acc.trim()) distill(q, acc, cfg);
 }
 
+/* ============ B+A：应对服务商内容审查 ============
+   审查发生在「搜索 API」与「模型服务商」两处，代码删不掉，只能绕：
+   B —— 换一个尺度不同的端点把同一问题再发一次；
+   A —— 用模型把问题改写成中性、去敏感措辞的问法后重发。
+   两者都只作用于你本机的请求，不改文库、不改联网通道。 */
+
+/* B：把上一个问题发到备用端点 */
+function reaskAlt(){
+  if(busy) return;
+  if(!_lastQ){ alert("还没有可重问的问题"); return; }
+  const c2 = cfgOf("alt");
+  if(!c2.key || !c2.base){ openSet(); alert("请先在设置里填写「备用端点」的接口地址与 API Key"); return; }
+  ask({ q:_lastQ, which:"alt" });
+}
+
+/* A 的底层：用某个端点把问题改写成中性问法（非流式，快） */
+async function rewriteWith(cfg, q){
+  const r = await fetch(cfg.base + "/chat/completions", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},
+    body: JSON.stringify({model:cfg.mdl, stream:false, temperature:0.3,
+      messages:[
+        {role:"system", content:"你是措辞改写助手。把用户给的提问改写成一个中性、客观、去掉情绪化与敏感措辞的提问句，意思保持不变；只输出改写后的这一句话，不要解释、不要分点、不要加引号。"},
+        {role:"user", content:q}
+      ]})
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j = await r.json();
+  return String(j.choices?.[0]?.message?.content||"").trim().replace(/^["'「『]+|["'」』]+$/g,"").trim();
+}
+/* A：改写后重发。改写优先用主端点，主端点不通则用备用；改写成功再由同一端点作答 */
+async function reaskRewrite(){
+  if(busy) return;
+  if(!_lastQ){ alert("还没有可重问的问题"); return; }
+  let rw = "", usedWhich = "pri";
+  for(const which of ["pri","alt"]){
+    const c = cfgOf(which);
+    if(!c.key || !c.base) continue;
+    try{
+      const out = await rewriteWith(c, _lastQ);
+      if(out && out.length >= 4){ rw = out; usedWhich = which; break; }
+    }catch(e){}
+  }
+  if(!rw){ alert("改写失败：请检查接口地址与 Key 是否可用"); return; }
+  addMsg("窑洞一号", `<b>✎ 已改写为中性问法：</b><div>${esc(rw)}</div>`, "net");
+  await ask({ q:rw, which:usedWhich });
+}
+
 function applyFont(){
   const r = document.documentElement.style;
   r.setProperty("--q-fs", (localStorage.getItem("ydh_qfs")||"15")+"px");
@@ -676,8 +753,10 @@ function applyFont(){
 function applyModel(){
   const on = localStorage.getItem("ydh_think")==="1";
   const m = on ? "deepseek-v4-pro" : (localStorage.getItem("ydh_model")||"deepseek-v4-flash");
+  const alt = localStorage.getItem("ydh_model2")||"";
+  const hasAlt = !!(localStorage.getItem("ydh_key2")||"").trim();
   const el = document.getElementById("curmodel");
-  if(el) el.textContent = "中继：" + m + (on ? "（深度思考）" : "");
+  if(el) el.textContent = "中继：" + m + (on ? "（深度思考）" : "") + (hasAlt ? " ｜ 备用：" + (alt||"—") : "");
 }
 function applyThink(){
   const on = localStorage.getItem("ydh_think")==="1";
@@ -790,8 +869,8 @@ function renderChat(){
   if(!s.msgs.length){
     const n = DOCS.reduce((a,d)=>a+d.s.length,0);
     c.innerHTML = `<div id="loading"><div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
-      <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>学习、班级工作、人际、心态上的困惑都可以问，我会调取经典著作的思想为你参谋。</div>
-      <div style="margin-top:14px;font-size:12px">试试：「和室友闹矛盾了怎么处理」「最近状态很差、提不起劲」「班里活动没人愿意配合」</div>
+      <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>任何问题都可以问——拿主意、看形势、理思路、解心结，我会调取经典著作的思想为你参谋。</div>
+      <div style="margin-top:14px;font-size:12px">试试：「最近有件事拿不定主意」「这个说法靠谱吗，帮我分析下」「最近状态很差、提不起劲」</div>
       <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION}${MEM.list.length ? ` · 长期记忆 ${MEM.list.length} 条` : ""}</div></div>`;
     return;
   }
@@ -941,6 +1020,16 @@ const NET = {
     try{ localStorage.setItem(this.KK, JSON.stringify(k)); }catch(e){}
   },
 
+  /* 逐通道手动开关：KC 存 {id:false} 形式的关闭名单；默认全部启用 */
+  KC:"ydh_netch",
+  chans(){ try{ return JSON.parse(localStorage.getItem(this.KC)||"{}") || {}; }catch(e){ return {}; } },
+  isOn(id){ return this.chans()[id] !== false; },
+  setChan(id, on){
+    const c = this.chans(); c[id] = !!on;
+    try{ localStorage.setItem(this.KC, JSON.stringify(c)); }catch(e){}
+    this.cache = {};
+  },
+
   setSw(v){
     this.on = !!v; this.save(); this.warned = false;
     applyNet(); renderNetStat();
@@ -1087,7 +1176,7 @@ const NET = {
   async gather(q){
     if(!this.on || !q) return {txt:"", list:[], note:""};
     this.hits++;
-    const avail = NET_SRC.filter(s => !s.needKey || this.key(s.id));
+    const avail = NET_SRC.filter(s => this.isOn(s.id) && (!s.needKey || this.key(s.id)));
     const outs = await Promise.all(avail.map(async s=>{
       try{
         const arr = await this._search(s.id, q);
@@ -1098,8 +1187,11 @@ const NET = {
     renderNetStat();
     if(!got.length){
       let note = "本轮联网未取到内容。";
-      if(avail.length === 0)
-        note += "未填写任何搜索 Key（国内直连通道需自备 Key），且未开启科学上网（境外通道需代理）—— 当前只能在文库内作答。";
+      const enabled = NET_SRC.filter(s => this.isOn(s.id));
+      if(enabled.length === 0)
+        note += "当前所有联网通道都被你用开关关掉了——在「🌐 联网参考」面板里打开需要的通道。";
+      else if(avail.length === 0)
+        note += "已启用的通道都还没填搜索 Key（国内直连通道需自备 Key），且未开启科学上网（境外通道需代理）—— 当前只能在文库内作答。";
       else
         note += "可能该话题触发了搜索源的内容合规过滤，或通道暂不可达；已自动跳过，文库回答不受影响。";
       return {txt:"", list:[], note};
@@ -1141,11 +1233,19 @@ function renderNetList(map){
            onchange="netKeyChange('${s.id}', this)"
            style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:12.5px"></div>`
       : "";
-    return `<div class="srcrow">
+    const on = NET.isOn(s.id);
+    const swRow = `<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--dim);white-space:nowrap;cursor:pointer">
+        <input type="checkbox" ${on?"checked":""} onchange="netChanChange('${s.id}', this.checked)"
+          style="width:auto;margin:0;flex-shrink:0">启用</label>`;
+    return `<div class="srcrow" style="${on?"":"opacity:.45"}">
       <div class="nm">${esc(s.name)}${tag}<i>${esc(s.desc)}</i>${keyRow}</div>
-      ${st}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">${st}${swRow}</div>
     </div>`;
   }).join("");
+}
+function netChanChange(id, on){
+  NET.setChan(id, on);
+  renderNetList(NET.lastProbe);
 }
 function netKeyChange(id, el){
   NET.setKey(id, el.value);
@@ -1178,6 +1278,9 @@ function openSet(){
   document.getElementById("base").value = localStorage.getItem("ydh_base")||"https://api.deepseek.com/v1";
   document.getElementById("key").value = localStorage.getItem("ydh_key")||"";
   document.getElementById("model").value = localStorage.getItem("ydh_model")||"deepseek-v4-flash";
+  document.getElementById("base2").value = localStorage.getItem("ydh_base2")||"";
+  document.getElementById("key2").value  = localStorage.getItem("ydh_key2")||"";
+  document.getElementById("model2").value= localStorage.getItem("ydh_model2")||"";
   document.getElementById("npw").value = "";
   document.getElementById("qfs").value = localStorage.getItem("ydh_qfs")||"15";
   document.getElementById("qcolor").value = localStorage.getItem("ydh_qcolor")||"#efe6da";
@@ -1197,6 +1300,9 @@ async function saveSet(){
   localStorage.setItem("ydh_base", document.getElementById("base").value.trim());
   localStorage.setItem("ydh_key",  document.getElementById("key").value.trim());
   localStorage.setItem("ydh_model",document.getElementById("model").value.trim());
+  localStorage.setItem("ydh_base2", document.getElementById("base2").value.trim());
+  localStorage.setItem("ydh_key2",  document.getElementById("key2").value.trim());
+  localStorage.setItem("ydh_model2",document.getElementById("model2").value.trim());
   localStorage.setItem("ydh_qfs", document.getElementById("qfs").value);
   localStorage.setItem("ydh_qcolor", document.getElementById("qcolor").value);
   localStorage.setItem("ydh_afs", document.getElementById("afs").value);
