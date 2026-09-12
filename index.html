@@ -598,10 +598,9 @@ async function ask(){
     const netHtml = `<b>联网参考（${netRes.list.length} 条 · 公开网络实时取得，非原文）：</b>`
       + netRes.list.map((x,i)=>`<div>〔网${i+1}〕${esc(x.src)} · ${esc(x.t)}</div>`).join("");
     addMsg("窑洞一号", netHtml, "net");
-  } else if(NET.on && !NET.warned){
-    NET.warned = true;
+  } else if(NET.on){
     addMsg("窑洞一号",
-      `<b>联网参考：本轮未取到内容</b><div>通道可能不可达（境外服务被阻断），已自动跳过。</div><div>文库原文检索与回答完全不受影响。可在「🌐 联网参考」面板里点检测查看各通道状态。</div>`,
+      `<b>🌐 联网参考：本轮未取到内容</b><div>${esc(netRes.note || "通道不可达或被过滤，已自动跳过；文库回答不受影响。")}</div>`,
       "net");
   }
   // 深度思考块（仅深度思考模式创建）
@@ -1086,7 +1085,7 @@ const NET = {
   /* 并发检索，按 NET_SRC 顺序取「第一个有结果的通道」——避免同一话题多源重复堆料。
      任何一步失败都被吞掉，绝不因联网问题影响文库问答主流程。 */
   async gather(q){
-    if(!this.on || !q) return {txt:"", list:[]};
+    if(!this.on || !q) return {txt:"", list:[], note:""};
     this.hits++;
     const avail = NET_SRC.filter(s => !s.needKey || this.key(s.id));
     const outs = await Promise.all(avail.map(async s=>{
@@ -1097,15 +1096,31 @@ const NET = {
     }));
     const got = outs.filter(Boolean);
     renderNetStat();
-    if(!got.length) return {txt:"", list:[]};
+    if(!got.length){
+      let note = "本轮联网未取到内容。";
+      if(avail.length === 0)
+        note += "未填写任何搜索 Key（国内直连通道需自备 Key），且未开启科学上网（境外通道需代理）—— 当前只能在文库内作答。";
+      else
+        note += "可能该话题触发了搜索源的内容合规过滤，或通道暂不可达；已自动跳过，文库回答不受影响。";
+      return {txt:"", list:[], note};
+    }
     this.ok++;
-    const use = got[0];
-    const list = [], lines = [];
-    use.items.forEach((it, i)=>{
-      list.push({src:use.src, t:it.t});
-      lines.push(`〔网${i+1}〕${use.src} · ${it.t}\n${it.x}`);
-    });
-    return {txt: lines.join("\n\n").slice(0, this.MAX_CHARS), list};
+    /* 合并所有取到结果的来源、按出现顺序去重，提升覆盖面：
+       单一搜索源对某话题做了合规过滤时，其他源（如博查/智谱互为备份、或境外通道）仍可能返回。 */
+    const seen = new Set(), list = [], lines = [];
+    let chars = 0;
+    for(const g of got){
+      for(const it of g.items){
+        if(seen.has(it.t)) continue;
+        seen.add(it.t);
+        if(chars + it.x.length > this.MAX_CHARS) continue;
+        list.push({src:g.src, t:it.t});
+        lines.push(`〔网${list.length}〕${g.src} · ${it.t}\n${it.x}`);
+        chars += it.x.length;
+      }
+    }
+    if(!list.length) return {txt:"", list:[], note:"本轮联网各源返回的结果均过短被丢弃，已自动跳过。"};
+    return {txt: lines.join("\n\n"), list};
   }
 };
 
