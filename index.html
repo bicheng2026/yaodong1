@@ -476,24 +476,46 @@ async function full(d){
   const t = await (await fetch(LIBP + encPath(d.f))).text();
   cache[k] = t; return t;
 }
-/* 按字节区间取文：主通道 raw（不压缩，坐标即原始字节）；失败则回落 Pages 整卷切片 */
+/* ---- 取文通道（2026-09-12 重构：解决"发消息很久才有回应"）----
+   病因：raw.githubusercontent.com 在国内时通时断，且旧版无超时——一次挂起能拖 10 秒+；
+   一旦失败又回落成"整卷下载"，大卷 2.8MB，慢到几十秒。
+   实测结论（node + 真浏览器，普通卷与最大卷都验过）：**同源 Pages 的 Range 完全可用**，
+   与 raw 返回同一区间逐字节一致。而 Pages 是本页同源（站点本身就靠它加载），最稳。
+   故改为：① 同源 Pages  → ② raw 备用 → ③ 整卷兜底；每一路都带硬超时，绝不让某路挂起拖死提问。 */
+const CH_T = 3000;                           // 单路取文硬超时（健康时实测 ~0.5s）
+let _pagesFail = 0, _rawFail = 0;            // 连续失败计数：达 2 次则本会话停用该通道
+async function _sliceTry(url, f, from, to){
+  const ac = new AbortController();
+  const timer = setTimeout(()=>ac.abort(), CH_T);
+  try{
+    const r = await fetch(url, {headers:{Range:`bytes=${from}-${to-1}`}, signal:ac.signal});
+    clearTimeout(timer);
+    if(r.status === 206){
+      return new TextDecoder("utf-8").decode(await r.arrayBuffer()).replace(/\uFFFD+$/,"");
+    }
+    if(r.status === 200){                    // 服务器忽略 Range，返回了整卷
+      const whole = await r.text();
+      cache["F:" + f] = whole;
+      return whole.slice(from, to).replace(/\uFFFD+$/,"");
+    }
+  }catch(e){ clearTimeout(timer); }
+  return null;                               // 超时 / 失败，由调用方换下一路
+}
+/* 按字节区间取文（带多通道冗余 + 超时） */
 async function fetchRange(f, from, to){
   const key = "R:" + f + "@" + from + "-" + to;
   if(cache[key] !== undefined) return cache[key];
-  try{
-    const r = await fetch(RAWBASE + encPath(f), {headers:{Range:`bytes=${from}-${to-1}`}});
-    if(r.status === 206){
-      const t = new TextDecoder("utf-8").decode(await r.arrayBuffer()).replace(/\uFFFD+$/,"");
-      cache[key] = t; return t;
-    }
-    if(r.status === 200){                       // 服务器忽略 Range，返回了整卷
-      const whole = await r.text();
-      cache["F:" + f] = whole;
-      const t = whole.slice(from, to).replace(/\uFFFD+$/,"");
-      cache[key] = t; return t;
-    }
-  }catch(e){ /* 静默落到回落通道 */ }
-  const whole = await full({f});
+  if(_pagesFail < 2){                        // ① 同源 Pages（首选）
+    const t = await _sliceTry(LIBP + encPath(f), f, from, to);
+    if(t !== null){ _pagesFail = 0; cache[key] = t; return t; }
+    _pagesFail++;
+  }
+  if(_rawFail < 2){                          // ② raw（备用）
+    const t = await _sliceTry(RAWBASE + encPath(f), f, from, to);
+    if(t !== null){ _rawFail = 0; cache[key] = t; return t; }
+    _rawFail++;
+  }
+  const whole = await full({f});             // ③ 整卷兜底（同源、按卷缓存）
   const seg = new TextEncoder().encode(whole).slice(from, to);
   const t = new TextDecoder("utf-8").decode(seg).replace(/^\uFFFD+|\uFFFD+$/g,"");
   cache[key] = t; return t;
@@ -585,22 +607,32 @@ async function ask(opt){
   for(const h of hits) push(h.d, h.i, h.ti||h.d.t);
   // ③ 取正文（并发；原为串行整卷下载，实测 4 卷就要 101 秒）
   //    联网检索同时并发发出——两条链路互不阻塞、互不污染：
-  //    原文来自文库（raw 分片），联网来自公开网络，各走各的缓存。
+  //    原文来自文库（同源 Pages 分片，raw 备用），联网来自公开网络，各走各的缓存。
   const picked = cands.slice(0, 6);
-  const netP = NET.on ? NET.gather(q) : Promise.resolve({txt:"", list:[]});
+  /* 立刻给一句可见的反馈：不让"检索原文 + 联网"这段静默等待显得像卡死。
+     用 paintMsg 直接画、不进会话记录，取到结果后即删除。 */
+  const waitBub = paintMsg({who:"窑洞一号", cls:"sys",
+    html:"正在检索文库原文…", text:"正在检索文库原文…"});
+  const cap = (p, ms) => Promise.race([p, new Promise(r=>setTimeout(()=>r(null), ms))]);
+  /* 联网只作补充：给它更短的预算，超时先答，绝不拖慢文库问答主线 */
+  const netP = NET.on
+    ? Promise.race([NET.gather(q),
+        new Promise(r=>setTimeout(()=>r({txt:"", list:[], note:"联网超时，已跳过。"}), 3500))])
+    : Promise.resolve({txt:"", list:[], note:""});
   const [got, netRes] = await Promise.all([
     Promise.all(picked.map(async h=>{
       try{
         if(h.i >= 0){
-          const body = await sliceSec(h.d, h.i);
+          const body = await cap(sliceSec(h.d, h.i), 6000);
           return body ? {src:`${h.d.t} · ${h.ti}`, txt:body} : null;
         }
-        const span = await headSpan(h.d);
-        return findRelated(span, q).map((p,k)=>({src:`${h.d.t}（卷内定位${k+1}）`, txt:p}));
+        const span = await cap(headSpan(h.d), 6000);
+        return span ? findRelated(span, q).map((p,k)=>({src:`${h.d.t}（卷内定位${k+1}）`, txt:p})) : null;
       }catch(e){ return null; }
     })),
     netP
   ]);
+  if(waitBub && waitBub.parentElement) waitBub.parentElement.remove();
   const parts = got.flat().filter(Boolean);
   const ctx = parts.map((p,i)=>`〔${i+1}〕${p.src}\n${p.txt}`).join("\n\n").slice(0,14000);
   const hasRef = parts.length > 0;
