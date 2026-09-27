@@ -1545,8 +1545,9 @@ function openDoc(d){
 async function readSec(d, i){
   const a = d.s[i][1];
   const b = (i+1 < d.s.length) ? d.s[i+1][1] : d.n;
-  const whole = await full(d);
-  return whole.slice(a, b);
+  // 走 fetchRange 分片取文（同源 Pages 优先 + raw 备用 + 整卷兜底），
+  // 不再整卷下载——旁边阅读从「数秒」降到「亚秒」。
+  return await fetchRange(d.f, a, b);
 }
 async function openSec(d, i){
   const rt = document.getElementById("rdText");
