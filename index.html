@@ -188,6 +188,39 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 .gchip{ font-size:12.5px; padding:6px 12px; border-radius:20px; border:1px solid var(--line); color:var(--ink); }
 .gchip:hover{ border-color:var(--gold); color:var(--gold); }
 .hometip{ color:var(--dim); font-size:13px; line-height:1.9; border-top:1px dashed var(--line); padding-top:16px; }
+/* ============ 手机端适配：侧栏/章节列表变抽屉 ============ */
+#sidemask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55}
+#hambtn{display:none}
+#rdlistbtn{display:none}
+@media (max-width:768px){
+  /* 顶部加汉堡按钮（仅手机） */
+  #hambtn{display:inline-block}
+  /* 文库目录变左侧抽屉，默认收起在屏外 */
+  #side{
+    position:fixed;top:0;left:0;bottom:0;height:100%;
+    width:84%;max-width:320px;z-index:60;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:0 0 30px rgba(0,0,0,.5);
+  }
+  body.side-open #side{transform:translateX(0)}
+  body.side-open #sidemask{display:block}
+  #main{width:100%}
+  /* 顶栏按钮紧凑换行 */
+  header{flex-wrap:wrap;gap:6px}
+  header .iconbtn{font-size:12px;padding:5px 9px}
+  header .t{font-size:15px}
+  /* 阅读视图：章节列表同样变抽屉 */
+  #rdlistbtn{display:inline-block}
+  .rdlist{
+    position:fixed;top:0;left:0;bottom:0;height:100%;
+    width:80%;max-width:300px;z-index:45;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:0 0 24px rgba(0,0,0,.5);
+  }
+  body.reader-list-open .rdlist{transform:translateX(0)}
+  .rdtext{padding:18px 16px 50px}
+  .home{padding:8px 4px}
+}
 </style>
 </head>
 <body data-page-node-id="RGuGRfY9Gr4K6L4uU17TJf">
@@ -212,6 +245,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 </div>
 
 <div id="app" data-page-node-id="eRTLznbm5DvDbU2POQ0flf">
+<div id="sidemask" onclick="closeSide()"></div>
 <aside id="side">
   <div class="brand">
     <div class="logo">窑</div>
@@ -223,6 +257,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 </aside>
 <div id="main">
   <header data-page-node-id="jauEEwJJ0wb8d5njiQXkwj">
+    <button id="hambtn" class="iconbtn" onclick="toggleSide()">☰</button>
     <div data-page-node-id="BaCIbqs3ijSvAEcQ8AR7Hw">
       <div class="t" data-page-node-id="3ZZukW0wK0KdjVUsm0uqYO">窑洞一号</div>
       <div class="s" id="stat" data-page-node-id="Y6F4Mk8jj0gLssCaTaQM63">正在载入索引…</div>
@@ -252,6 +287,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
   <div id="reader" style="display:none">
     <div class="rdhead">
       <button class="iconbtn" onclick="showChat()">← 返回对话</button>
+      <button id="rdlistbtn" class="iconbtn" onclick="toggleRdList()">☰ 目录</button>
       <div class="rdmeta"><div id="rdTitle" class="rdt">窑洞一号 · 文库</div><div id="rdSub" class="rds"></div></div>
       <div class="sp"></div>
       <button class="iconbtn" onclick="renderHome()">🏠 总览</button>
@@ -1615,6 +1651,19 @@ window.addEventListener("appinstalled", function(){
 function ydhInstall(){
   if(_defPrompt){ _defPrompt.prompt(); if(_defPrompt.userChoice && _defPrompt.userChoice.finally){ _defPrompt.userChoice.finally(function(){ _defPrompt = null; }); } }
 }
+
+/* ============ 手机端：侧栏/章节列表抽屉交互 ============ */
+function toggleSide(){ document.body.classList.toggle("side-open"); }
+function closeSide(){ document.body.classList.remove("side-open"); }
+function toggleRdList(){ document.body.classList.toggle("reader-list-open"); }
+function closeRdList(){ document.body.classList.remove("reader-list-open"); }
+// 点文库目录里的条目 → 收起侧栏；点章节 → 收起章节抽屉
+(function(){
+  var dl = document.getElementById("doclist");
+  if(dl) dl.addEventListener("click", function(e){ if(e.target.closest(".doc")) closeSide(); });
+  var rdl = document.querySelector(".rdlist");
+  if(rdl) rdl.addEventListener("click", function(e){ if(e.target.closest(".chap")) closeRdList(); });
+})();
 </script>
 </body>
 </html>
