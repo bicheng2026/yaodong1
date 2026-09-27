@@ -379,7 +379,7 @@ const IDX = "data/index.json", LIBP = "lib/";
    只能整卷取 —— 仅作 raw 不可达时的回落。 */
 const RAWBASE = "https://raw.githubusercontent.com/bicheng2026/yaodong1/main/lib/";
 let DOCS = [], cache = {}, busy = false;
-const VERSION = "2026.09.11";
+const VERSION = "2026.09.27";
 /* 桌面版本地运行标记：通过 http://localhost 打开时自动跳过访问密码（本机私有） */
 const IS_LOCAL = location.protocol !== "file:" && (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "::1");
 
@@ -1000,7 +1000,7 @@ function renderChat(){
     c.innerHTML = `<div id="loading"><div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
       <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>任何问题都可以问——拿主意、看形势、理思路、解心结，我会调取经典著作的思想为你参谋。</div>
       <div style="margin-top:14px;font-size:12px">试试：「最近有件事拿不定主意」「这个说法靠谱吗，帮我分析下」「最近状态很差、提不起劲」</div>
-      <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION}${MEM.list.length ? ` · 长期记忆 ${MEM.list.length} 条` : ""}</div></div>`;
+      <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION} · 页面工具著作权归江德胜${MEM.list.length ? ` · 长期记忆 ${MEM.list.length} 条` : ""}</div></div>`;
     return;
   }
   for(const rec of s.msgs) paintMsg(rec);
@@ -1582,7 +1582,8 @@ function renderHome(){
     '</div>' +
     '<div class="homet">思想导航（直接问，或先读这些篇目）</div>' +
     '<div class="chips">'+chips+'</div>' +
-    '<p class="hometip">顶部「📚 文库」进入阅读；左侧栏按分类浏览；底部对话框随时向经典著作请教、拿主意。问答与联网需在「设置」里填自己的 API Key。</p>';
+    '<p class="hometip">顶部「📚 文库」进入阅读；左侧栏按分类浏览；底部对话框随时向经典著作请教、拿主意。问答与联网需在「设置」里填自己的 API Key。</p>' +
+    '<div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION} · 页面工具著作权归江德胜</div>';
   rt.appendChild(wrap);
 }
 
