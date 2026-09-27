@@ -1,8 +1,8 @@
 /* 窑洞一号 · Service Worker（PWA 离线外壳 + 安装） */
-const CACHE = "yaodong1-v4";
+const CACHE = "yaodong1-v5";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./app-icon-192.png", "./app-icon-512.png", "./data/index.json"
+  "./ydh-appicon-192.png", "./ydh-appicon-512.png", "./data/index.json"
 ];
 
 self.addEventListener("install", e => {
