@@ -3,6 +3,10 @@
 <head data-page-node-id="PfU8xMU4CBjgqzspcrcuJ9">
 <meta charset="utf-8" data-page-node-id="Eqpk8wq0ONqdmg6w5q6g9T">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" data-page-node-id="AZTgD1g2DyJsJk29wCQLrK">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#171310">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>窑洞一号 · 文库问答</title>
 <style>
 :root{
@@ -28,7 +32,7 @@ body{
   background:linear-gradient(180deg,var(--red),#96271b);color:#fff;font-size:16px;cursor:pointer}
 #lock .err{color:#e07a6a;font-size:13px;margin-top:12px;min-height:20px}
 /* ---------- 主界面 ---------- */
-#app{display:none;flex-direction:column;height:100%;max-width:900px;margin:0 auto}
+#app{display:none;flex-direction:row;height:100%;max-width:none;margin:0}
 header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;
   background:linear-gradient(180deg,#241d17,#1b1611)}
 header .t{font-size:16px;letter-spacing:2px;color:var(--gold);font-weight:600}
@@ -119,6 +123,70 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 #down h1{font-size:22px;letter-spacing:3px;color:var(--gold);margin:0 0 12px}
 #down p{color:var(--dim);font-size:14px;line-height:1.9}
 #down .by{font-size:12px;margin-top:18px;opacity:.55}
+/* ============ 桌面版：布局 / 侧边栏 / 阅读 ============ */
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
+*::-webkit-scrollbar-thumb:hover { background: #4a3a2c; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+#app{ display:none; flex-direction:row; height:100%; max-width:none; margin:0; }
+#main{ flex:1; display:flex; flex-direction:column; min-width:0; height:100%; }
+
+/* 侧边栏 */
+#side{ width:288px; flex-shrink:0; background:linear-gradient(180deg,#1d1712,#16110d);
+  border-right:1px solid var(--line); display:flex; flex-direction:column; height:100%; overflow:hidden; }
+#side .brand{ display:flex; align-items:center; gap:11px; padding:16px 16px 14px; border-bottom:1px solid var(--line); }
+#side .logo{ width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,#e8c074,var(--red)); color:#1a120c;
+  display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700;
+  box-shadow:0 2px 10px rgba(192,57,43,.35); }
+#side .bt{ font-size:17px; letter-spacing:3px; color:var(--gold); font-weight:600; }
+#side .bs{ font-size:11px; color:var(--dim); letter-spacing:1px; margin-top:2px; }
+.sidebox{ padding:12px 12px 8px; }
+.sideSearch{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--bg); color:var(--ink); font-size:13.5px; outline:none; }
+.sideSearch:focus{ border-color:var(--gold); }
+.doclist{ flex:1; overflow-y:auto; padding:4px 8px 12px; }
+.doclist .cat{ font-size:11.5px; color:var(--gold); letter-spacing:2px; padding:14px 8px 6px; opacity:.85; }
+.doclist .doc{ padding:8px 10px; border-radius:8px; font-size:13.5px; color:var(--ink);
+  cursor:pointer; line-height:1.5; margin:1px 0; border:1px solid transparent; }
+.doclist .doc:hover{ background:var(--card); }
+.doclist .doc.on{ background:rgba(216,164,79,.14); border-color:rgba(216,164,79,.4); color:var(--gold); }
+.sidefoot{ padding:10px 16px; border-top:1px solid var(--line); font-size:11px; color:var(--dim); letter-spacing:1px; }
+
+/* 阅读视图 */
+#reader{ display:none; flex-direction:column; flex:1; min-width:0; height:100%; background:var(--bg); }
+.rdhead{ display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#241d17,#1b1611); }
+.rdmeta{ min-width:0; }
+.rdt{ font-size:15px; color:var(--gold); font-weight:600; letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rds{ font-size:11.5px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rdbodywrap{ flex:1; display:flex; min-height:0; }
+.rdlist{ width:230px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--line); padding:8px; background:var(--bg2); }
+.rdlist .chap{ display:block; width:100%; text-align:left; padding:8px 10px; margin:2px 0; border-radius:8px;
+  background:transparent; border:1px solid transparent; color:var(--ink); font-size:13px; line-height:1.5; cursor:pointer; }
+.rdlist .chap:hover{ background:var(--card); }
+.rdlist .chap.on{ background:rgba(216,164,79,.14); border-color:rgba(216,164,79,.4); color:var(--gold); }
+.rdtext{ flex:1; overflow-y:auto; padding:26px 34px 60px; }
+.rdhint{ color:var(--dim); font-size:13px; padding:30px 10px; text-align:center; }
+.rdchap{ font-size:20px; color:var(--gold); font-weight:600; letter-spacing:1px; margin:0 0 16px;
+  padding-bottom:12px; border-bottom:1px solid var(--line); }
+.rdbody{ font-size:16px; line-height:2.0; color:var(--ink); white-space:pre-wrap; word-break:break-word; max-width:820px; }
+
+/* 文库首页 */
+.home{ max-width:760px; margin:0 auto; padding:10px 4px; }
+.homeh{ font-size:24px; color:var(--gold); letter-spacing:2px; margin:6px 0 10px; }
+.homep{ color:var(--dim); font-size:14px; line-height:1.9; margin:0 0 22px; }
+.homegrid{ display:flex; gap:14px; margin-bottom:26px; }
+.homecard{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; text-align:center; }
+.homecard .hc{ font-size:26px; color:var(--red); font-weight:700; }
+.homecard div:last-child{ font-size:12.5px; color:var(--dim); margin-top:6px; }
+.homet{ font-size:13px; color:var(--gold); letter-spacing:1px; margin:6px 0 12px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; }
+.gchip{ font-size:12.5px; padding:6px 12px; border-radius:20px; border:1px solid var(--line); color:var(--ink); }
+.gchip:hover{ border-color:var(--gold); color:var(--gold); }
+.hometip{ color:var(--dim); font-size:13px; line-height:1.9; border-top:1px dashed var(--line); padding-top:16px; }
 </style>
 </head>
 <body data-page-node-id="RGuGRfY9Gr4K6L4uU17TJf">
@@ -143,16 +211,28 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
 </div>
 
 <div id="app" data-page-node-id="eRTLznbm5DvDbU2POQ0flf">
+<aside id="side">
+  <div class="brand">
+    <div class="logo">窑</div>
+    <div><div class="bt">窑洞一号</div><div class="bs">桌面版 · 离线文库</div></div>
+  </div>
+  <div class="sidebox"><input id="sideSearch" class="sideSearch" placeholder="搜文献 / 章节…" oninput="filterDocs(this.value)"></div>
+  <div id="doclist" class="doclist"></div>
+  <div class="sidefoot" id="sidefoot">载入中…</div>
+</aside>
+<div id="main">
   <header data-page-node-id="jauEEwJJ0wb8d5njiQXkwj">
     <div data-page-node-id="BaCIbqs3ijSvAEcQ8AR7Hw">
       <div class="t" data-page-node-id="3ZZukW0wK0KdjVUsm0uqYO">窑洞一号</div>
       <div class="s" id="stat" data-page-node-id="Y6F4Mk8jj0gLssCaTaQM63">正在载入索引…</div>
     <div class="s" id="curmodel" style="font-size:11px">中继：—</div>
     </div>
+    <button class="iconbtn" onclick="renderHome()">📚 文库</button>
     <div class="sp" data-page-node-id="fXxpKFMq4BcDkGeoimrdYo"></div>
     <button class="iconbtn" onclick="openSess()" title="历史会话">会话</button>
     <button class="iconbtn" onclick="openMem()" title="长期记忆">记忆<span id="memcnt"></span></button>
     <button class="iconbtn" onclick="openSet()" data-page-node-id="fTapkwyw8yFZCBwaswxoy0">设置</button>
+    <button class="iconbtn" id="installBtn" style="display:none" onclick="ydhInstall()">📲 安装</button>
   </header>
   <div id="chat" data-page-node-id="wMN31CE1E1lg7BQz5Rt4wA"><div id="loading" data-page-node-id="A1bu5cJ8CXN7UT3FwGTiSQ">正在载入文库索引…</div></div>
   <div id="bar" data-page-node-id="XlQxXg21vo4RxwIA3sYFOs">
@@ -168,6 +248,19 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
     </div>
     <div class="tip" data-page-node-id="GQRc5qa4fT5kjdVM096tBU">任何需要拿主意、想听意见的事都能问，会结合经典著作给你参谋。Enter 发送 / Shift+Enter 换行</div>
   </div>
+  <div id="reader" style="display:none">
+    <div class="rdhead">
+      <button class="iconbtn" onclick="showChat()">← 返回对话</button>
+      <div class="rdmeta"><div id="rdTitle" class="rdt">窑洞一号 · 文库</div><div id="rdSub" class="rds"></div></div>
+      <div class="sp"></div>
+      <button class="iconbtn" onclick="renderHome()">🏠 总览</button>
+    </div>
+    <div class="rdbodywrap">
+      <div id="rdList" class="rdlist"></div>
+      <div id="rdText" class="rdtext"></div>
+    </div>
+  </div>
+</main>
 </div>
 
 <div id="netmask">
@@ -287,6 +380,8 @@ const IDX = "data/index.json", LIBP = "lib/";
 const RAWBASE = "https://raw.githubusercontent.com/bicheng2026/yaodong1/main/lib/";
 let DOCS = [], cache = {}, busy = false;
 const VERSION = "2026.09.11";
+/* 桌面版本地运行标记：通过 http://localhost 打开时自动跳过访问密码（本机私有） */
+const IS_LOCAL = location.protocol !== "file:" && (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "::1");
 
 /* ============ 密码 ============ */
 async function sha256(s){
@@ -308,7 +403,8 @@ async function unlock(){
   }
 }
 document.getElementById("pw").addEventListener("keydown", e=>{ if(e.key==="Enter") unlock(); });
-if(sessionStorage.getItem("ydh_ok")==="1"){
+if(sessionStorage.getItem("ydh_ok")==="1" || IS_LOCAL){
+  sessionStorage.setItem("ydh_ok","1");
   document.getElementById("lock").style.display="none";
   document.getElementById("app").style.display="flex";
 }
@@ -339,6 +435,7 @@ async function boot(){
     const n = DOCS.reduce((a,d)=>a+d.s.length,0);
     document.getElementById("stat").textContent = `${DOCS.length} 部文献 · ${n} 章节`;
     renderChat();   /* 恢复上次会话；无历史则显示欢迎语 */
+    buildSidebar(); /* 桌面版：构建左侧文库导航 */
   }catch(e){
     document.getElementById("loading").textContent = "索引载入失败：" + e.message;
   }
@@ -1364,6 +1461,130 @@ document.querySelectorAll("#modelchips .chip").forEach(c=>{
   if(el) el.addEventListener("input", ()=>{ localStorage.setItem("ydh_"+id, el.value); applyFont(); });
 });
 
+/* ============ 桌面版：文库导航 + 阅读面板 ============ */
+function catOf(f){
+  if(f.indexOf("毛泽东")>=0) return "甲 · 毛泽东著作";
+  if(f.indexOf("马克思恩格斯")>=0) return "乙 · 马克思恩格斯著作";
+  if(f.indexOf("列宁")>=0) return "丙 · 列宁著作";
+  return "资料 · 总览";
+}
+let _docsAll = [];
+function buildSidebar(){
+  if(!DOCS.length) return;
+  _docsAll = DOCS.slice();
+  renderDocList(_docsAll);
+  const sf = document.getElementById("sidefoot");
+  if(sf) sf.textContent = DOCS.length + " 部文献 · 离线可用";
+}
+function renderDocList(docs){
+  const list = document.getElementById("doclist");
+  if(!list) return;
+  list.innerHTML = "";
+  const groups = {};
+  for(const d of docs){
+    const c = catOf(d.f);
+    (groups[c] = groups[c] || []).push(d);
+  }
+  const order = Object.keys(groups).sort();
+  for(const c of order){
+    const h = document.createElement("div");
+    h.className = "cat"; h.textContent = c; list.appendChild(h);
+    for(const d of groups[c]){
+      const it = document.createElement("div");
+      it.className = "doc"; it.textContent = (d.t || d.f); it.title = d.f;
+      it.onclick = () => {
+        document.querySelectorAll(".doc").forEach(x=>x.classList.remove("on"));
+        it.classList.add("on"); openDoc(d);
+      };
+      list.appendChild(it);
+    }
+  }
+}
+function filterDocs(q){
+  q = (q || "").trim().toLowerCase();
+  if(!q){ renderDocList(_docsAll); return; }
+  const hit = _docsAll.filter(d=>{
+    if((d.t||"").toLowerCase().indexOf(q)>=0) return true;
+    if((d.f||"").toLowerCase().indexOf(q)>=0) return true;
+    if(d.s && d.s.some(s=>(s[0]||"").toLowerCase().indexOf(q)>=0)) return true;
+    return false;
+  });
+  renderDocList(hit);
+}
+function showReader(){
+  document.getElementById("chat").style.display = "none";
+  document.getElementById("bar").style.display = "none";
+  document.getElementById("reader").style.display = "flex";
+}
+function showChat(){
+  document.getElementById("reader").style.display = "none";
+  document.getElementById("chat").style.display = "block";
+  document.getElementById("bar").style.display = "block";
+  const c = document.getElementById("chat");
+  c.scrollTop = c.scrollHeight;
+}
+function openDoc(d){
+  showReader();
+  document.getElementById("rdTitle").textContent = d.t || d.f;
+  document.getElementById("rdSub").textContent = d.f + " · " + (d.s ? d.s.length : 0) + " 章 · " + Math.round(d.n/1024) + " KB";
+  const rl = document.getElementById("rdList");
+  const rt = document.getElementById("rdText");
+  if(!d.s || !d.s.length){ rl.innerHTML = ""; rt.innerHTML = '<div class="rdhint">本篇为总览 / 索引，无分章正文。</div>'; return; }
+  rl.innerHTML = "";
+  d.s.forEach((sec, i)=>{
+    const b = document.createElement("button");
+    b.className = "chap"; b.textContent = (sec[0] || ("第" + (i+1) + "节")); b.title = sec[0] || "";
+    b.onclick = () => {
+      document.querySelectorAll(".chap").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); openSec(d, i);
+    };
+    rl.appendChild(b);
+  });
+  openSec(d, 0);
+}
+async function readSec(d, i){
+  const a = d.s[i][1];
+  const b = (i+1 < d.s.length) ? d.s[i+1][1] : d.n;
+  const whole = await full(d);
+  return whole.slice(a, b);
+}
+async function openSec(d, i){
+  const rt = document.getElementById("rdText");
+  rt.innerHTML = '<div class="rdhint">正在调取原文…</div>';
+  let txt = "";
+  try { txt = await readSec(d, i); } catch(e){ txt = "（原文调取失败：" + e.message + "）"; }
+  rt.textContent = "";
+  const h = document.createElement("div"); h.className = "rdchap"; h.textContent = d.s[i][0] || ("第" + (i+1) + "节");
+  const body = document.createElement("div"); body.className = "rdbody"; body.textContent = (txt && txt.trim()) ? txt : "（本章暂无正文）";
+  rt.appendChild(h); rt.appendChild(body);
+  rt.scrollTop = 0;
+}
+function renderHome(){
+  showReader();
+  document.getElementById("rdTitle").textContent = "窑洞一号 · 文库";
+  document.getElementById("rdSub").textContent = (DOCS.length) + " 部马列毛著作原文 · 完全离线";
+  const rl = document.getElementById("rdList");
+  rl.innerHTML = '<div class="rdhint">← 在左侧「文库导航」挑一部文献</div>';
+  const rt = document.getElementById("rdText");
+  rt.innerHTML = "";
+  let secCount = 0; try { secCount = DOCS.reduce((a,d)=>a + (d.s ? d.s.length : 0), 0); } catch(e){}
+  const chips = (typeof GUIDE !== "undefined") ? GUIDE.map(g=>'<span class="gchip">'+g.name+'</span>').join("") : "";
+  const wrap = document.createElement("div");
+  wrap.className = "home";
+  wrap.innerHTML =
+    '<div class="homeh">欢迎来到窑洞一号桌面版</div>' +
+    '<p class="homep">这里是马列毛著作原文知识库，所有内容都在你本机，断网也能读、能检索。左侧按「甲·毛泽东 / 乙·马恩 / 丙·列宁」分类浏览，点文献再点章节即可读原文。</p>' +
+    '<div class="homegrid">' +
+      '<div class="homecard"><div class="hc">'+DOCS.length+'</div><div>部文献可阅</div></div>' +
+      '<div class="homecard"><div class="hc">'+secCount+'</div><div>个章节</div></div>' +
+      '<div class="homecard"><div class="hc">离线</div><div>检索 / 阅读</div></div>' +
+    '</div>' +
+    '<div class="homet">思想导航（直接问，或先读这些篇目）</div>' +
+    '<div class="chips">'+chips+'</div>' +
+    '<p class="hometip">顶部「📚 文库」进入阅读；左侧栏按分类浏览；底部对话框随时向经典著作请教、拿主意。问答与联网需在「设置」里填自己的 API Key。</p>';
+  rt.appendChild(wrap);
+}
+
 /* ============ 启动（放在最后：此时 SS / MEM / 各函数均已就绪）============ */
 SS.load();
 MEM.load();
@@ -1376,6 +1597,20 @@ applyModel();
 applyThink();
 applyNet();
 renderNetStat();
+
+/* ============ PWA：Service Worker 注册 + 安装 ============ */
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+var _defPrompt = null;
+window.addEventListener("beforeinstallprompt", function(e){
+  e.preventDefault(); _defPrompt = e;
+  var b = document.getElementById("installBtn"); if(b) b.style.display = "";
+});
+window.addEventListener("appinstalled", function(){
+  var b = document.getElementById("installBtn"); if(b) b.style.display = "none";
+});
+function ydhInstall(){
+  if(_defPrompt){ _defPrompt.prompt(); if(_defPrompt.userChoice && _defPrompt.userChoice.finally){ _defPrompt.userChoice.finally(function(){ _defPrompt = null; }); } }
+}
 </script>
 </body>
 </html>
