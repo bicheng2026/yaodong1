@@ -82,6 +82,7 @@ header .sp{flex:1}
 .tip{font-size:11.5px;color:var(--dim);margin-top:8px;text-align:center}
 .thinkbtn{display:block;margin:0 0 8px;padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--dim);font-size:12.5px;cursor:pointer}
 .thinkbtn.on{border-color:var(--gold);color:var(--gold);background:rgba(216,164,79,.12)}
+.foot{padding:7px 16px;font-size:11px;color:var(--dim);text-align:center;border-top:1px solid var(--line);background:var(--bg2);flex-shrink:0}
 /* ---------- 设置 ---------- */
 #mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;
   align-items:center;justify-content:center;padding:20px}
@@ -260,6 +261,7 @@ mark{background:rgba(216,164,79,.28);color:var(--gold);padding:0 2px;border-radi
       <div id="rdText" class="rdtext"></div>
     </div>
   </div>
+  <footer class="foot" id="foot"></footer>
 </main>
 </div>
 
@@ -1000,7 +1002,7 @@ function renderChat(){
     c.innerHTML = `<div id="loading"><div style="color:var(--gold);font-size:15px;margin-bottom:8px">窑洞一号 · 文库问答</div>
       <div>已载入 ${DOCS.length} 部文献、${n} 个章节。<br>任何问题都可以问——拿主意、看形势、理思路、解心结，我会调取经典著作的思想为你参谋。</div>
       <div style="margin-top:14px;font-size:12px">试试：「最近有件事拿不定主意」「这个说法靠谱吗，帮我分析下」「最近状态很差、提不起劲」</div>
-      <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION} · 页面工具著作权归江德胜${MEM.list.length ? ` · 长期记忆 ${MEM.list.length} 条` : ""}</div></div>`;
+      <div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION}${MEM.list.length ? ` · 长期记忆 ${MEM.list.length} 条` : ""}</div></div>`;
     return;
   }
   for(const rec of s.msgs) paintMsg(rec);
@@ -1582,8 +1584,7 @@ function renderHome(){
     '</div>' +
     '<div class="homet">思想导航（直接问，或先读这些篇目）</div>' +
     '<div class="chips">'+chips+'</div>' +
-    '<p class="hometip">顶部「📚 文库」进入阅读；左侧栏按分类浏览；底部对话框随时向经典著作请教、拿主意。问答与联网需在「设置」里填自己的 API Key。</p>' +
-    '<div style="margin-top:10px;font-size:11px;opacity:.6">当前版本 v${VERSION} · 页面工具著作权归江德胜</div>';
+    '<p class="hometip">顶部「📚 文库」进入阅读；左侧栏按分类浏览；底部对话框随时向经典著作请教、拿主意。问答与联网需在「设置」里填自己的 API Key。</p>';
   rt.appendChild(wrap);
 }
 
@@ -1599,6 +1600,7 @@ applyModel();
 applyThink();
 applyNet();
 renderNetStat();
+document.getElementById("foot").textContent = "当前版本 v" + VERSION + " · 页面工具著作权归江德胜";
 
 /* ============ PWA：Service Worker 注册 + 安装 ============ */
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
